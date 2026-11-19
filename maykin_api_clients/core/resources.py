@@ -4,13 +4,22 @@ import copy
 import logging
 from collections.abc import Mapping
 from typing import Self
-from uuid import UUID
 
 import msgspec
 import requests
 from ape_pie import APIClient
 
+from .query_params import QueryParams
+
 logger = logging.getLogger(__name__)
+
+
+type Headers = Mapping[str, str]
+"""
+Case-insensitive mapping of HTTP headers.
+
+Primarily used to model HTTP request headers.
+"""
 
 
 class BaseResource[C: APIClient]:
@@ -73,141 +82,97 @@ class BaseResource[C: APIClient]:
 
         .. todo:: Implement proper error handling with response-shape aware structs.
         """
-        response_data = response.json()
         # for now: assume no errors :)
+        # response.raise_for_status()
+
+        response_data = response.json()
         return msgspec.convert(response_data, type=struct)
-
-    def _detail_path(self, identifier: str | UUID) -> str:
-        # Accept a full URL too, since that's what you get in e.g. ``zaak.zaaktype``.
-        # ape-pie checks that it's under the base URL.
-        identifier = str(identifier)
-        if identifier.startswith(("http://", "https://")):
-            return identifier
-        return f"{self.base_path}/{identifier}"
-
-    def _list_resources[T](
-        self,
-        struct_type: type[T],
-        *,
-        params: msgspec.Struct | None = None,
-        headers: Mapping | None = None,
-    ) -> T:
-        response = self._get(self.base_path, headers=headers, params=params)
-        return self.process_response(response, struct_type)
-
-    def _retrieve_resource[T](
-        self,
-        identifier: str | UUID,
-        struct_type: type[T],
-        *,
-        headers: Mapping | None = None,
-    ) -> T:
-        response = self._get(self._detail_path(identifier), headers=headers)
-        return self.process_response(response, struct_type)
-
-    def _create_resource[T](
-        self,
-        data: msgspec.Struct,
-        struct_type: type[T],
-        *,
-        headers: Mapping | None = None,
-    ) -> T:
-        payload = msgspec.to_builtins(data)
-        msgspec.convert(payload, type(data))
-        response = self._post(self.base_path, headers=headers, data=payload)
-        return self.process_response(response, struct_type)
 
     def _get(
         self,
         path: str,
-        headers: Mapping | None = None,
-        params: msgspec.Struct | None = None,
+        headers: Headers | None = None,
+        params: QueryParams | None = None,
     ) -> requests.Response:
-        query_params = msgspec.to_builtins(params)
+        query_params = params.as_params() if params is not None else None
         response = self.http_client.request(
             "get", path, headers=headers, params=query_params
         )
-        response.raise_for_status()
         return response
 
-    def _post(
-        self,
-        path: str,
-        headers: Mapping | None = None,
-        params: msgspec.Struct | None = None,
-        data: object = None,
-    ) -> requests.Response:
-        query_params = msgspec.to_builtins(params)
-        response = self.http_client.request(
-            "post",
-            path,
-            headers=headers,
-            json=data,
-            params=query_params,
-        )
-        response.raise_for_status()
-        return response
+    # def _post(
+    #     self,
+    #     path: str,
+    #     headers: Headers | None = None,
+    #     params: QueryParams | None = None,
+    #     data: object = None,
+    # ) -> requests.Response:
+    #     query_params = params.as_params() if params is not None else None
+    #     response = self.http_client.request(
+    #         "post",
+    #         path,
+    #         headers=headers,
+    #         json=data,
+    #         params=query_params,
+    #     )
+    #     return response
 
-    def _put(
-        self,
-        path: str,
-        headers: Mapping | None = None,
-        params: msgspec.Struct | None = None,
-        data: object = None,
-    ) -> requests.Response:
-        query_params = msgspec.to_builtins(params)
-        response = self.http_client.request(
-            "put", path, headers=headers, json=data, params=query_params
-        )
-        response.raise_for_status()
-        return response
+    # def _put(
+    #     self,
+    #     path: str,
+    #     headers: Headers | None = None,
+    #     params: QueryParams | None = None,
+    #     data: object = None,
+    # ) -> requests.Response:
+    #     query_params = params.as_params() if params is not None else None
+    #     response = self.http_client.request(
+    #         "put", path, headers=headers, json=data, params=query_params
+    #     )
+    #     return response
 
-    def _delete(
-        self,
-        path: str,
-        headers: Mapping | None = None,
-        params: msgspec.Struct | None = None,
-    ) -> requests.Response:
-        query_params = msgspec.to_builtins(params)
-        response = self.http_client.request(
-            "delete",
-            path,
-            headers=headers,
-            params=query_params,
-        )
-        response.raise_for_status()
-        return response
+    # def _delete(
+    #     self,
+    #     path: str,
+    #     headers: Headers | None = None,
+    #     params: QueryParams | None = None,
+    # ) -> requests.Response:
+    #     query_params = params.as_params() if params is not None else None
+    #     response = self.http_client.request(
+    #         "delete",
+    #         path,
+    #         headers=headers,
+    #         params=query_params,
+    #     )
+    #     return response
 
-    def _patch(
-        self,
-        path: str,
-        headers: Mapping | None = None,
-        params: msgspec.Struct | None = None,
-        data: object = None,
-    ) -> requests.Response:
-        query_params = msgspec.to_builtins(params)
-        response = self.http_client.request(
-            "patch",
-            path,
-            headers=headers,
-            params=query_params,
-            json=data,
-        )
-        response.raise_for_status()
-        return response
+    # def _patch(
+    #     self,
+    #     path: str,
+    #     headers: Headers | None = None,
+    #     params: QueryParams | None = None,
+    #     data: object = None,
+    # ) -> requests.Response:
+    #     query_params = params.as_params() if params is not None else None
+    #     response = self.http_client.request(
+    #         "patch",
+    #         path,
+    #         headers=headers,
+    #         params=query_params,
+    #         json=data,
+    #     )
+    #     return response
 
-    def _options(
-        self,
-        path: str,
-        headers: Mapping | None = None,
-        params: msgspec.Struct | None = None,
-    ) -> requests.Response:
-        query_params = msgspec.to_builtins(params)
-        response = self.http_client.request(
-            "options",
-            path,
-            headers=headers,
-            params=query_params,
-        )
-        response.raise_for_status()
-        return response
+    # def _options(
+    #     self,
+    #     path: str,
+    #     headers: Headers | None = None,
+    #     params: QueryParams | None = None,
+    # ) -> requests.Response:
+    #     query_params = params.as_params() if params is not None else None
+    #     response = self.http_client.request(
+    #         "options",
+    #         path,
+    #         headers=headers,
+    #         params=query_params,
+    #     )
+    #     return response

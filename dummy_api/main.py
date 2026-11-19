@@ -14,15 +14,19 @@ Run in dev using:
 """
 
 from datetime import UTC, datetime
+from typing import Annotated
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 
 app = FastAPI()
 
 
 @app.get("/camel-case")
-def read_camel_case():
+def read_camel_case(
+    optional_query: Annotated[str, Query(alias="optionalQuery")] = "",
+):
     return {
         "apiVersion": "0.1.0",
         "now": datetime.now(tz=UTC),
+        "query": optional_query,
     }
