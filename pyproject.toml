@@ -47,6 +47,8 @@ tests = [
     "pytest-recording",
     "types-requests",
     "pytest-cov",
+    "fastapi",  # for the dummy API service
+    "fastapi-cli",
 ]
 docs = [
     "sphinx",

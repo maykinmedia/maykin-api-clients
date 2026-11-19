@@ -1,0 +1,7 @@
+---
+
+services:
+  dummy-api:
+    build: ./dummy_api/
+    ports:
+      - "8000:8000"
