@@ -2,24 +2,15 @@ from __future__ import annotations
 
 import copy
 import logging
-from collections.abc import Mapping
 from typing import Self, final
 
 import msgspec
 import requests
 from ape_pie import APIClient
 
-from .query_params import QueryParams
+from .parameters import Headers, QueryParams
 
 logger = logging.getLogger(__name__)
-
-
-type Headers = Mapping[str, str]
-"""
-Case-insensitive mapping of HTTP headers.
-
-Primarily used to model HTTP request headers.
-"""
 
 
 class BaseResource[C: APIClient]:
