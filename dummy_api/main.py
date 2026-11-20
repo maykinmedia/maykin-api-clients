@@ -15,6 +15,7 @@ Run in dev using:
 
 from datetime import UTC, datetime
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import FastAPI, Query
 
@@ -29,4 +30,13 @@ def read_camel_case(
         "apiVersion": "0.1.0",
         "now": datetime.now(tz=UTC),
         "query": optional_query,
+    }
+
+
+@app.get("/todos/{uuid}")
+def read_todo(uuid: UUID):
+    return {
+        "uuid": uuid,
+        "title": "Write tests",
+        "done": False,
     }
