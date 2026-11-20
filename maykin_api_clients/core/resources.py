@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 import logging
 from collections.abc import Mapping
-from typing import Self
+from typing import Self, final
 
 import msgspec
 import requests
@@ -51,7 +51,7 @@ class BaseResource[C: APIClient]:
         bound = copy.copy(self)
         bound._http_client = client
         # Cache on the instance. Because this is a non-data descriptor
-        # (no __set__), the instance attribute now shadows it, so later
+        # (disabled __set__), the instance attribute now shadows it, so later
         # accesses skip __get__ and return the same bound resource.
         client.__dict__[self._name] = bound
 
@@ -60,6 +60,7 @@ class BaseResource[C: APIClient]:
     def __set__(self, *args, **kwargs):
         raise NotImplementedError("Deliberately not supported.")
 
+    @final
     @property
     def http_client(self) -> C:
         if self._http_client is None:
