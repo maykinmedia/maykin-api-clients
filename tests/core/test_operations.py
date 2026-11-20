@@ -1,10 +1,11 @@
 import pytest
 
-from maykin_api_clients.core import BaseSchemaStruct, PathArgs, RetrieveOperation
+from maykin_api_clients.core import BaseSchemaStruct, PathArgs
+from maykin_api_clients.core.operations import ReadOperation
 
 
 def test_retrieve_operation_instantiates_for_paths_without_arguments():
-    operation = RetrieveOperation(path="foo", returns=BaseSchemaStruct)
+    operation = ReadOperation(path="foo", returns=BaseSchemaStruct)
 
     assert operation
 
@@ -13,7 +14,7 @@ def test_retrieve_operation_instantiates_for_paths_with_declared_arguments():
     class OperationArgs(PathArgs):
         id: int
 
-    operation = RetrieveOperation(
+    operation = ReadOperation(
         path="collection/{id}/sub-resource",
         call_args=OperationArgs,
         returns=BaseSchemaStruct,
@@ -27,7 +28,7 @@ def test_retrieve_operation_raises_for_mismatch_in_path_and_args_params():
         TypeError,
         match="path 'foo/{bar}' expects path parameters bar, which is not declared",
     ):
-        RetrieveOperation(path="foo/{bar}", returns=BaseSchemaStruct)
+        ReadOperation(path="foo/{bar}", returns=BaseSchemaStruct)
 
 
 def test_retrieve_operation_raises_for_positional_args():
@@ -36,4 +37,4 @@ def test_retrieve_operation_raises_for_positional_args():
             pass
 
     with pytest.raises(TypeError, match="must only accept keyword arguments"):
-        RetrieveOperation(path="{pos_arg}", call_args=Args, returns=BaseSchemaStruct)
+        ReadOperation(path="{pos_arg}", call_args=Args, returns=BaseSchemaStruct)

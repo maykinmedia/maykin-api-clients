@@ -6,7 +6,7 @@ Keep API-specific code out of this package - instead create a subpackage in
 """
 
 from .exceptions import ClientError, ClientIOError, ClientResponseError
-from .operations import RetrieveOperation
+from .operations import ListOperation, RetrieveOperation
 from .parameters import PathArgs, QueryArgs, QueryParamsStruct
 from .resources import BaseResource
 from .structs import UNSET, BaseSchemaStruct, UnsetType
@@ -18,6 +18,7 @@ __all__ = [
     "ClientError",
     "ClientIOError",
     "ClientResponseError",
+    "ListOperation",
     "PathArgs",
     "QueryArgs",
     "QueryParamsStruct",

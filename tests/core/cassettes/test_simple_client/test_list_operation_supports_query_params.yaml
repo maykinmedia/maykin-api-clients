@@ -1,0 +1,31 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: http://localhost:8000/todos?optionalQuery=hi
+  response:
+    body:
+      string: '[{"uuid":"836ab46d-8260-4d2f-8058-727057430d1b","title":"Write tests","done":false},{"uuid":"0da428e1-41a9-4d3c-bb53-bd81655ac737","title":"Think
+        about architecture","done":true}]'
+    headers:
+      content-length:
+      - '179'
+      content-type:
+      - application/json
+      date:
+      - Fri, 20 Nov 2026 17:48:02 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+version: 1

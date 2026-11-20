@@ -21,14 +21,10 @@ from typing_extensions import ParamSpec  # to be able to pass a default
 
 from .parameters import NoArgs, QueryArgsProtocol, QueryParams
 from .resources import BaseResource
-from .structs import BaseSchemaStruct
 
-#
-# Operation call arguments
-#
-
-
-R = TypeVar("R", bound=BaseSchemaStruct)
+# can't set a bound, because even a detail endoint could return something other than
+# a mapping/dict
+R = TypeVar("R")
 P = ParamSpec("P", default=[])  # default for when P is empty and cannot be inferred
 
 
@@ -117,9 +113,9 @@ class Operation:
         )
 
 
-class RetrieveOperation(Operation, Generic[R, P]):
+class ReadOperation(Operation, Generic[R, P]):
     """
-    Define the retrieve operation.
+    Define a read (``GET``) operation.
 
     The operation must at least define the relative API path to call and the
     expected return struct. When the path contains path arguments, e.g.
@@ -130,11 +126,12 @@ class RetrieveOperation(Operation, Generic[R, P]):
       path can contain path argument placeholders, e.g.
       ``rel-path/{arg1}/fixed/{arg2}`` that will be evaluated at call time.
     :param returns: The expected return value after decoding the response data.
-      Should be something that ``msgspec`` understands.
+      Should be something that ``msgspec`` understands. If responses are paginated,
+      use a struct that models that appropriately.
     :param call_args: A callable - usually a msgspec struct but can be any class or
       function that returns a container for the call arguments. It's signature is
       used for the :meth:`__call__` signature. It's recommended to inherit from
-      :class:`Args`.
+      :class:`maykin_api_clients.core.PathArgs`.
     """
 
     def __init__(
@@ -142,7 +139,7 @@ class RetrieveOperation(Operation, Generic[R, P]):
         *,
         path: str,
         returns: type[R],
-        # effectively this expects an Args subclass, but the Callable generic allows
+        # effectively this expects a PathArgs subclass, but the Callable generic allows
         # inferring the __init__ kwargs to apply to the __call__ signature.
         call_args: Callable[P, object] = NoArgs,
     ):
@@ -185,3 +182,21 @@ class RetrieveOperation(Operation, Generic[R, P]):
         # apply!
         response = resource._get(path, params=params)
         return resource.process_response(response, struct=self.returns)
+
+
+ListOperation = ReadOperation
+"""
+The list operation.
+
+An alias for the read operation, since the list and retrieve operations definitions
+effectively must support the same semantics.
+"""
+
+
+RetrieveOperation = ReadOperation
+"""
+The retrieve operation.
+
+An alias for the read operation, since the list and retrieve operations definitions
+effectively must support the same semantics.
+"""

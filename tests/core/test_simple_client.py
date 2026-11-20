@@ -4,6 +4,7 @@ Test full request-response processing of a client against the dummy API service.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
@@ -16,6 +17,7 @@ from maykin_api_clients.core import (
     UNSET,
     BaseResource,
     BaseSchemaStruct,
+    ListOperation,
     QueryArgs,
     QueryParamsStruct,
     RetrieveOperation,
@@ -64,11 +66,20 @@ class TodoParams(BaseParams):
     optional_query: str | UnsetType = UNSET
 
 
+class ListTodoArgs(QueryArgs[TodoParams]):
+    pass
+
+
 class RetrieveTodoArgs(QueryArgs[TodoParams]):
     uuid: UUID | str
 
 
 class TodoResource(BaseResource["DummyAPIClient"]):
+    list = ListOperation(
+        path="todos",
+        call_args=ListTodoArgs,
+        returns=Sequence[Todo],
+    )
     retrieve = RetrieveOperation(
         path="todos/{uuid}",
         call_args=RetrieveTodoArgs,
@@ -146,3 +157,16 @@ def test_type_inference(dummy_api_client: DummyAPIClient):
             uuid="a4cc47ba-cab1-4189-a58c-189a3d29d412",
             params=MetaParams(optional_query="query"),  # pyright: ignore[reportArgumentType]
         )
+
+
+def test_list_operation_returns_list_of_todos(dummy_api_client: DummyAPIClient):
+    todos = dummy_api_client.todo.list()
+
+    assert len(todos) == 2
+    assert all(isinstance(todo, Todo) for todo in todos)
+
+
+def test_list_operation_supports_query_params(dummy_api_client: DummyAPIClient):
+    todos = dummy_api_client.todo.list(params=TodoParams(optional_query="hi"))
+
+    assert len(todos) == 2

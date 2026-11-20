@@ -15,7 +15,7 @@ Run in dev using:
 
 from datetime import UTC, datetime
 from typing import Annotated
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import FastAPI, Query
 
@@ -31,6 +31,22 @@ def read_camel_case(
         "now": datetime.now(tz=UTC),
         "query": optional_query,
     }
+
+
+@app.get("/todos")
+def list_tods():
+    return [
+        {
+            "uuid": uuid4(),
+            "title": "Write tests",
+            "done": False,
+        },
+        {
+            "uuid": uuid4(),
+            "title": "Think about architecture",
+            "done": True,
+        },
+    ]
 
 
 @app.get("/todos/{uuid}")
