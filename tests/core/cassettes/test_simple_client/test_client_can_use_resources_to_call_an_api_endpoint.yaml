@@ -1,0 +1,30 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: http://localhost:8000/camel-case
+  response:
+    body:
+      string: '{"apiVersion":"0.1.0","now":"2026-11-20T16:43:45.551843+00:00","query":""}'
+    headers:
+      content-length:
+      - '74'
+      content-type:
+      - application/json
+      date:
+      - Fri, 20 Nov 2026 16:43:45 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+version: 1
