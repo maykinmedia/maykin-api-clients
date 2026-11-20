@@ -104,6 +104,7 @@ ignore = []
 pythonVersion = "3.12"
 pythonPlatform = "Linux"
 typeCheckingMode = "basic"
+reportUnnecessaryTypeIgnoreComment = "error"
 
 [tool.ruff.lint]
 extend-select = [
