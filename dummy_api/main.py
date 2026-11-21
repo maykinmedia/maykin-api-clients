@@ -15,44 +15,46 @@ Run in dev using:
 
 from datetime import UTC, datetime
 from typing import Annotated
-from uuid import UUID, uuid4
+from uuid import UUID
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, HTTPException, Query
 
 app = FastAPI()
 
 
-@app.get("/camel-case")
-def read_camel_case(
-    optional_query: Annotated[str, Query(alias="optionalQuery")] = "",
-):
-    return {
-        "apiVersion": "0.1.0",
-        "now": datetime.now(tz=UTC),
-        "query": optional_query,
-    }
+TODOS = [
+    {
+        "uuid": UUID("05442685-15d4-49a6-abd9-2ed0a4bbe73e"),
+        "title": "Write tests",
+        "done": False,
+        "completedOn": None,
+    },
+    {
+        "uuid": UUID("d19ea23e-cfa2-4e16-9ad0-200bd85d1098"),
+        "title": "Think about architecture",
+        "done": True,
+        "completedOn": datetime(2026, 11, 23, 18, 0, 5, tzinfo=UTC),
+    },
+]
 
 
 @app.get("/todos")
-def list_tods():
+def list_todos(
+    optional_query: Annotated[str, Query(alias="optionalQuery")] = "",
+):
     return [
-        {
-            "uuid": uuid4(),
-            "title": "Write tests",
-            "done": False,
-        },
-        {
-            "uuid": uuid4(),
-            "title": "Think about architecture",
-            "done": True,
-        },
+        todo
+        for todo in TODOS
+        if (not optional_query or optional_query in todo["title"])
     ]
 
 
 @app.get("/todos/{uuid}")
-def read_todo(uuid: UUID):
-    return {
-        "uuid": uuid,
-        "title": "Write tests",
-        "done": False,
-    }
+def read_todo(
+    uuid: UUID,
+    optional_query: Annotated[str, Query(alias="optionalQuery")] = "",
+):
+    todo = next((todo for todo in TODOS if todo["uuid"] == uuid), None)
+    if todo is None:
+        raise HTTPException(status_code=404, detail="Not found.")
+    return todo
