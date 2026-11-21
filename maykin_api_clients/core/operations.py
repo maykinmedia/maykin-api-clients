@@ -14,7 +14,7 @@ import copy
 import inspect
 import string
 from collections.abc import Callable, Collection
-from typing import Generic, Self, TypeVar, final
+from typing import Generic, Self, final, get_origin
 from urllib.parse import quote
 
 from typing_extensions import ParamSpec  # to be able to pass a default
@@ -82,8 +82,10 @@ class Operation:
         path_fields: Collection[str],
         args: Callable[..., object],
     ):
-        args_name = repr(args)
-        parameters = inspect.signature(args).parameters
+        # get_origin is required for when passing call_args=QueryArgs[ParamsType]
+        _args = get_origin(args) or args
+        args_name = repr(_args)
+        parameters = inspect.signature(_args).parameters
         if any(
             p
             for p in parameters.values()
