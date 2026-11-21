@@ -49,6 +49,9 @@ class OperationPath(Generic[T, P]):
         if __debug__:
             self.check()
 
+    def __repr__(self):
+        return f"<{self.__class__.__name__} path={self.path!r}>"
+
     def check(self) -> None:
         """
         Check that the arg spec types the provided path template.
@@ -57,7 +60,9 @@ class OperationPath(Generic[T, P]):
         get_args_holder = get_origin(self.get_args_holder) or self.get_args_holder
         args_name = repr(get_args_holder)
         parameters = inspect.signature(get_args_holder).parameters
+        parameter_names = set(parameters.keys())
 
+        # check if there are any positional arguments allowed
         if any(
             p
             for p in parameters.values()
@@ -66,16 +71,19 @@ class OperationPath(Generic[T, P]):
             raise TypeError(f"{args_name} must only accept keyword arguments")
 
         # test if there are any path parameters not specified in the arg spec
-        if missing := set(self.path_params) - parameters.keys():
+        if missing := self.path_params - parameter_names:
             raise TypeError(
-                f"path {self.path!r} expects path parameters "
-                f"{','.join(sorted(missing))}, which "
-                f"{'is' if len(missing) == 1 else 'are'} not declared "
-                f"in {args_name}"
+                f"path {self.path!r} expects path parameter(s) "
+                f"{','.join(sorted(missing))}, which is/are not declared in {args_name}"
             )
 
         # test if there are any parameters declared in the arg spec *not* in the
         # reserved names or path parameters
+        if extra := parameter_names - (self.path_params | {"params", "payload"}):
+            raise TypeError(
+                f"path {self.path!r} does not expect the path parameter(s) "
+                f"{','.join(sorted(extra))}, which is/are declared in {args_name}"
+            )
 
     def evaluate(self, *args: P.args, **kwargs: P.kwargs) -> tuple[str, T]:
         """

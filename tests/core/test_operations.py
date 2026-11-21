@@ -26,7 +26,7 @@ def test_retrieve_operation_instantiates_for_paths_with_declared_arguments():
 def test_retrieve_operation_raises_for_mismatch_in_path_and_args_params():
     with pytest.raises(
         TypeError,
-        match="path 'foo/{bar}' expects path parameters bar, which is not declared",
+        match=r"path 'foo/{bar}' expects path parameter\(s\) bar",
     ):
         ReadOperation(path="foo/{bar}", returns=BaseSchemaStruct)
 
