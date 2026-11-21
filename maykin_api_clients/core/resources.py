@@ -92,22 +92,22 @@ class BaseResource[C: APIClient]:
         )
         return response
 
-    # def _post(
-    #     self,
-    #     path: str,
-    #     headers: Headers | None = None,
-    #     params: QueryParams | None = None,
-    #     data: object = None,
-    # ) -> requests.Response:
-    #     query_params = params.as_params() if params is not None else None
-    #     response = self.http_client.request(
-    #         "post",
-    #         path,
-    #         headers=headers,
-    #         json=data,
-    #         params=query_params,
-    #     )
-    #     return response
+    def _post(
+        self,
+        path: str,
+        headers: Headers | None = None,
+        params: QueryParams | None = None,
+        json: object = None,  # typed as Any in requests
+    ) -> requests.Response:
+        query_params = params.as_params() if params is not None else None
+        response = self.http_client.request(
+            "post",
+            path,
+            headers=headers,
+            json=json,
+            params=query_params,
+        )
+        return response
 
     # def _put(
     #     self,

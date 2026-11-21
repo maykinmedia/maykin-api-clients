@@ -14,12 +14,13 @@ import copy
 import inspect
 import string
 from collections.abc import Callable, Collection
-from typing import Generic, Self, final, get_origin
+from typing import Generic, Self, TypeVar, final, get_origin
 from urllib.parse import quote
 
-from typing_extensions import ParamSpec  # to be able to pass a default
+import msgspec
+from typing_extensions import ParamSpec
 
-from .parameters import NoArgs, QueryArgsProtocol, QueryParams
+from .parameters import NoArgs, PayloadArgs, QueryArgsProtocol, QueryParams
 from .resources import BaseResource
 
 # can't set a bound, because even a detail endoint could return something other than
@@ -74,6 +75,13 @@ class Operation:
                 "a bound resource from the client."
             )
         return self._resource
+
+    @final
+    @staticmethod
+    def _parse_path(path: str) -> frozenset[str]:
+        return frozenset(
+            {name for _, name, _, _ in string.Formatter().parse(path) if name}
+        )
 
     @final
     @staticmethod
@@ -150,15 +158,13 @@ class ReadOperation(Operation, Generic[R, P]):
         self.returns = returns
 
         # extract the path placeholders, e.g. foo/{uuid}/bar -> extracts 'uuid'
-        self._path_fields = {
-            name for _, name, _, _ in string.Formatter().parse(path) if name
-        }
+        self._path_fields = self._parse_path(path)
         if __debug__:
             self._check_arguments(path, self._path_fields, call_args)
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         """
-        Execute the retrieve operation.
+        Execute the read operation.
 
         The configured path is interpolated with the provided path arguments. If there
         are query parameters provided, they're passed along to the underlying GET call.
@@ -183,6 +189,47 @@ class ReadOperation(Operation, Generic[R, P]):
         # TODO: support for headers=... -> would be an actual example of defaults to
         # apply!
         response = resource._get(path, params=params)
+        return resource.process_response(response, struct=self.returns)
+
+
+class CreateOperation(Operation, Generic[R, P]):
+    def __init__(
+        self,
+        *,
+        path: str,
+        returns: type[R],
+        call_args: Callable[P, PayloadArgs] = PayloadArgs,
+    ):
+        self.path = path
+        self.arguments = call_args
+        self.returns = returns
+
+        # extract the path placeholders, e.g. foo/{uuid}/bar -> extracts 'uuid'
+        self._path_fields = self._parse_path(path)
+        if __debug__:
+            self._check_arguments(path, self._path_fields, call_args)
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+        """
+        Execute the create operation.
+
+        The configured path is interpolated with the provided path arguments. The
+        payload is passed along as JSON to the underlying POST call.
+
+        The HTTP response JSON is processed into the specified return type.
+        """
+        assert not args, "Positional arguments should not be possible/allowed"
+        # instantate the arguments - this gives access to the defaults if a parameter
+        # is optional and not provided, which raw **kwargs access does not. Raw **kwargs
+        # access would be most performant, but inspect.Signature.bind is about 10-15
+        # times slower to work around the **kwargs defaults.
+        args_holder = self.arguments(*args, **kwargs)
+
+        path = self.interpolate_path(self.path, args_holder, self._path_fields)
+        resource = self.resource
+        # TODO: support for headers=... -> would be an actual example of defaults to
+        # apply!
+        response = resource._post(path, json=msgspec.to_builtins(args_holder.payload))
         return resource.process_response(response, struct=self.returns)
 
 

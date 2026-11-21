@@ -16,7 +16,9 @@ from maykin_api_clients.core import (
     UNSET,
     BaseResource,
     BaseSchemaStruct,
+    CreateOperation,
     ListOperation,
+    PayloadArgs,
     QueryArgs,
     QueryParamsStruct,
     RetrieveOperation,
@@ -55,6 +57,11 @@ class TodoResource(BaseResource["APIClient"]):
     retrieve = RetrieveOperation(
         path="todos/{uuid}",
         call_args=RetrieveTodoArgs,
+        returns=Todo,
+    )
+    create = CreateOperation(
+        path="todos",
+        call_args=PayloadArgs[Todo],
         returns=Todo,
     )
 
