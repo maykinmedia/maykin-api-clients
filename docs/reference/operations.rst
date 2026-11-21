@@ -75,7 +75,13 @@ Some things are worth pointing out:
 Built-in operations
 ===================
 
+.. autoclass:: maykin_api_clients.core.ListOperation
+    :members:
+
 .. autoclass:: maykin_api_clients.core.RetrieveOperation
+    :members:
+
+.. autoclass:: maykin_api_clients.core.CreateOperation
     :members:
 
 Custom operations

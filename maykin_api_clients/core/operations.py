@@ -13,7 +13,7 @@ the keyword arguments each operation accepts.
 import copy
 import inspect
 import string
-from collections.abc import Callable, Collection
+from collections.abc import Callable
 from typing import Generic, Self, TypeVar, final, get_origin
 from urllib.parse import quote
 
@@ -27,6 +27,76 @@ from .resources import BaseResource
 # a mapping/dict
 R = TypeVar("R")
 P = ParamSpec("P", default=[])  # default for when P is empty and cannot be inferred
+
+
+#
+# (Path) argument handling
+#
+
+T = TypeVar("T")
+
+
+class OperationPath(Generic[T, P]):
+    __slots__ = ("get_args_holder", "path", "path_params")
+
+    def __init__(self, path: str, arg_spec: Callable[P, T]):
+        self.path = path
+        self.path_params = frozenset(
+            {name for _, name, _, _ in string.Formatter().parse(path) if name}
+        )
+        self.get_args_holder = arg_spec
+
+        if __debug__:
+            self.check()
+
+    def check(self) -> None:
+        """
+        Check that the arg spec types the provided path template.
+        """
+        # get_origin is required for when passing call_args=QueryArgs[ParamsType]
+        get_args_holder = get_origin(self.get_args_holder) or self.get_args_holder
+        args_name = repr(get_args_holder)
+        parameters = inspect.signature(get_args_holder).parameters
+
+        if any(
+            p
+            for p in parameters.values()
+            if p.kind is not inspect.Parameter.KEYWORD_ONLY
+        ):
+            raise TypeError(f"{args_name} must only accept keyword arguments")
+
+        # test if there are any path parameters not specified in the arg spec
+        if missing := set(self.path_params) - parameters.keys():
+            raise TypeError(
+                f"path {self.path!r} expects path parameters "
+                f"{','.join(sorted(missing))}, which "
+                f"{'is' if len(missing) == 1 else 'are'} not declared "
+                f"in {args_name}"
+            )
+
+        # test if there are any parameters declared in the arg spec *not* in the
+        # reserved names or path parameters
+
+    def evaluate(self, *args: P.args, **kwargs: P.kwargs) -> tuple[str, T]:
+        """
+        Evaluate the path for the given keyword arguments.
+
+        :returns: a tuple of the the resulting API path and the arguments holder
+          holding the non-path arguments.
+        """
+        assert not args, "Positional arguments should not be possible/allowed"
+        # instantate the arguments - this gives access to the defaults if a parameter
+        # is optional and not provided, which raw **kwargs access does not. Raw **kwargs
+        # access would be most performant, but inspect.Signature.bind is about 10-15
+        # times slower to work around the **kwargs defaults.
+        args_holder = self.get_args_holder(*args, **kwargs)
+        path = self.path.format_map(
+            {
+                name: quote(str(getattr(args_holder, name)), safe="")
+                for name in self.path_params
+            }
+        )
+        return path, args_holder
 
 
 #
@@ -76,52 +146,6 @@ class Operation:
             )
         return self._resource
 
-    @final
-    @staticmethod
-    def _parse_path(path: str) -> frozenset[str]:
-        return frozenset(
-            {name for _, name, _, _ in string.Formatter().parse(path) if name}
-        )
-
-    @final
-    @staticmethod
-    def _check_arguments(
-        path: str,
-        path_fields: Collection[str],
-        args: Callable[..., object],
-    ):
-        # get_origin is required for when passing call_args=QueryArgs[ParamsType]
-        _args = get_origin(args) or args
-        args_name = repr(_args)
-        parameters = inspect.signature(_args).parameters
-        if any(
-            p
-            for p in parameters.values()
-            if p.kind is not inspect.Parameter.KEYWORD_ONLY
-        ):
-            raise TypeError(f"{args_name} must only accept keyword arguments")
-
-        if missing := set(path_fields) - parameters.keys():
-            raise TypeError(
-                f"path {path!r} expects path parameters {','.join(sorted(missing))}, "
-                f"which {'is' if len(missing) == 1 else 'are'} not declared "
-                f"in {args_name}"
-            )
-
-    @final
-    @staticmethod
-    def interpolate_path(
-        path: str,
-        args_holder: object,
-        path_params: Collection[str],
-    ) -> str:
-        return path.format_map(
-            {
-                name: quote(str(getattr(args_holder, name)), safe="")
-                for name in path_params
-            }
-        )
-
 
 class ReadOperation(Operation, Generic[R, P]):
     """
@@ -153,14 +177,8 @@ class ReadOperation(Operation, Generic[R, P]):
         # inferring the __init__ kwargs to apply to the __call__ signature.
         call_args: Callable[P, object] = NoArgs,
     ):
-        self.path = path
-        self.arguments = call_args
+        self.path = OperationPath(path, call_args)
         self.returns = returns
-
-        # extract the path placeholders, e.g. foo/{uuid}/bar -> extracts 'uuid'
-        self._path_fields = self._parse_path(path)
-        if __debug__:
-            self._check_arguments(path, self._path_fields, call_args)
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         """
@@ -171,28 +189,42 @@ class ReadOperation(Operation, Generic[R, P]):
 
         The HTTP response JSON is processed into the specified return type.
         """
-        assert not args, "Positional arguments should not be possible/allowed"
-        # instantate the arguments - this gives access to the defaults if a parameter
-        # is optional and not provided, which raw **kwargs access does not. Raw **kwargs
-        # access would be most performant, but inspect.Signature.bind is about 10-15
-        # times slower to work around the **kwargs defaults.
-        args_holder = self.arguments(*args, **kwargs)
-
+        path, args_holder = self.path.evaluate(*args, **kwargs)
         # enforce consistent naming for the query params argument by only consuming
         # .params here
         params: QueryParams | None = None
         if isinstance(args_holder, QueryArgsProtocol):
             params = args_holder.params
 
-        path = self.interpolate_path(self.path, args_holder, self._path_fields)
-        resource = self.resource
         # TODO: support for headers=... -> would be an actual example of defaults to
-        # apply!
+        # apply in the call_args!
+
+        resource = self.resource
         response = resource._get(path, params=params)
         return resource.process_response(response, struct=self.returns)
 
 
 class CreateOperation(Operation, Generic[R, P]):
+    """
+    Define a create (``POST``) operation.
+
+    The operation must at least define the relative API path to call, the expected
+    return struct and the expected shape of the payload. When the path contains path
+    arguments, e.g. ``my-resource/{id}``, the ``call_args`` type/class must declare
+    the expected types of these arguments.
+
+    :param path: The path (relative to the API root) to make the GET call to. The
+      path can contain path argument placeholders, e.g.
+      ``rel-path/{arg1}/fixed/{arg2}`` that will be evaluated at call time.
+    :param returns: The expected return value after decoding the response data.
+      Should be something that ``msgspec`` understands. If responses are paginated,
+      use a struct that models that appropriately.
+    :param call_args: A callable - usually a msgspec struct but can be any class or
+      function that returns a container for the call arguments. It's signature is
+      used for the :meth:`__call__` signature. It's recommended to inherit from
+      :class:`maykin_api_clients.core.PayloadArgs`.
+    """
+
     def __init__(
         self,
         *,
@@ -200,14 +232,8 @@ class CreateOperation(Operation, Generic[R, P]):
         returns: type[R],
         call_args: Callable[P, PayloadArgs] = PayloadArgs,
     ):
-        self.path = path
-        self.arguments = call_args
+        self.path = OperationPath(path, call_args)
         self.returns = returns
-
-        # extract the path placeholders, e.g. foo/{uuid}/bar -> extracts 'uuid'
-        self._path_fields = self._parse_path(path)
-        if __debug__:
-            self._check_arguments(path, self._path_fields, call_args)
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         """
@@ -218,17 +244,12 @@ class CreateOperation(Operation, Generic[R, P]):
 
         The HTTP response JSON is processed into the specified return type.
         """
-        assert not args, "Positional arguments should not be possible/allowed"
-        # instantate the arguments - this gives access to the defaults if a parameter
-        # is optional and not provided, which raw **kwargs access does not. Raw **kwargs
-        # access would be most performant, but inspect.Signature.bind is about 10-15
-        # times slower to work around the **kwargs defaults.
-        args_holder = self.arguments(*args, **kwargs)
+        path, args_holder = self.path.evaluate(*args, **kwargs)
 
-        path = self.interpolate_path(self.path, args_holder, self._path_fields)
-        resource = self.resource
         # TODO: support for headers=... -> would be an actual example of defaults to
-        # apply!
+        # apply in the call_args!
+
+        resource = self.resource
         response = resource._post(path, json=msgspec.to_builtins(args_holder.payload))
         return resource.process_response(response, struct=self.returns)
 
