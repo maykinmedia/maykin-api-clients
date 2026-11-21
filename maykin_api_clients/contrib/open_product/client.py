@@ -5,6 +5,7 @@ from requests.structures import CaseInsensitiveDict
 from requests.utils import default_headers
 from typing_extensions import TypedDict
 
+from .content_label import ContentLabelResource
 from .prices import PriceResource
 from .themes import ThemeResource
 
@@ -15,6 +16,7 @@ class RequestKwargs(TypedDict, extra_items=object):
 
 class OpenProductClient(APIClient):
     Theme = ThemeResource()
+    ContentLabel = ContentLabelResource()
     Price = PriceResource()
 
     def __init__(
