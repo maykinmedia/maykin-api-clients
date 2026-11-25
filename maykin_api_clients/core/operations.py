@@ -20,6 +20,7 @@ from urllib.parse import quote
 import msgspec
 from typing_extensions import ParamSpec
 
+from .errors import ErrorMap
 from .parameters import NoArgs, PayloadArgs, QueryArgsProtocol, QueryParams
 from .resources import BaseResource
 
@@ -174,6 +175,9 @@ class ReadOperation(Operation, Generic[R, P]):
       function that returns a container for the call arguments. It's signature is
       used for the :meth:`__call__` signature. It's recommended to inherit from
       :class:`maykin_api_clients.core.PathArgs`.
+    :param errors: Operation-specific error response shapes, see
+      :mod:`maykin_api_clients.core.errors`. Takes precedence over the errors declared
+      on the resource.
     """
 
     def __init__(
@@ -184,9 +188,11 @@ class ReadOperation(Operation, Generic[R, P]):
         # effectively this expects a PathArgs subclass, but the Callable generic allows
         # inferring the __init__ kwargs to apply to the __call__ signature.
         call_args: Callable[P, object] = NoArgs,
+        errors: ErrorMap | None = None,
     ):
         self.path = OperationPath(path, call_args)
         self.returns = returns
+        self.errors = errors
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         """
@@ -209,7 +215,9 @@ class ReadOperation(Operation, Generic[R, P]):
 
         resource = self.resource
         response = resource._get(path, params=params)
-        return resource.process_response(response, struct=self.returns)
+        return resource.process_response(
+            response, struct=self.returns, errors=self.errors
+        )
 
 
 class CreateOperation(Operation, Generic[R, P]):
@@ -231,6 +239,9 @@ class CreateOperation(Operation, Generic[R, P]):
       function that returns a container for the call arguments. It's signature is
       used for the :meth:`__call__` signature. It's recommended to inherit from
       :class:`maykin_api_clients.core.PayloadArgs`.
+    :param errors: Operation-specific error response shapes, see
+      :mod:`maykin_api_clients.core.errors`. Takes precedence over the errors declared
+      on the resource.
     """
 
     def __init__(
@@ -239,9 +250,11 @@ class CreateOperation(Operation, Generic[R, P]):
         path: str,
         returns: type[R],
         call_args: Callable[P, PayloadArgs] = PayloadArgs,
+        errors: ErrorMap | None = None,
     ):
         self.path = OperationPath(path, call_args)
         self.returns = returns
+        self.errors = errors
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         """
@@ -259,7 +272,9 @@ class CreateOperation(Operation, Generic[R, P]):
 
         resource = self.resource
         response = resource._post(path, json=msgspec.to_builtins(args_holder.payload))
-        return resource.process_response(response, struct=self.returns)
+        return resource.process_response(
+            response, struct=self.returns, errors=self.errors
+        )
 
 
 ListOperation = ReadOperation

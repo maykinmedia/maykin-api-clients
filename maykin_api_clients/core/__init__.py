@@ -5,6 +5,7 @@ Keep API-specific code out of this package - instead create a subpackage in
 :mod:`maykin_api_clients.contrib`.
 """
 
+from .errors import ErrorMap
 from .exceptions import ClientError, ClientIOError, ClientResponseError
 from .operations import CreateOperation, ListOperation, RetrieveOperation
 from .parameters import PathArgs, PayloadArgs, QueryArgs, QueryParamsStruct
@@ -19,6 +20,7 @@ __all__ = [
     "ClientIOError",
     "ClientResponseError",
     "CreateOperation",
+    "ErrorMap",
     "ListOperation",
     "PathArgs",
     "PayloadArgs",

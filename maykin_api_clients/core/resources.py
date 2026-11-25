@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import Self, final
+from typing import ClassVar, Self, final
 
 import msgspec
 import requests
 from ape_pie import APIClient
 
+from .errors import ErrorMap, StatusKey, resolve_error_type
+from .exceptions import ClientIOError, ClientResponseError
 from .parameters import Headers, QueryParams
 
 logger = logging.getLogger(__name__)
@@ -25,6 +27,14 @@ class BaseResource[C: APIClient]:
         class MyResource(BaseResource[ExpectedClient]):
             def retrieve(self, ...) -> ...:
                 ...
+    """
+
+    errors: ClassVar[ErrorMap] = {}
+    """
+    Error response shapes shared by all operations of the resource.
+
+    Operations can declare their own ``errors``, which take precedence. Define a base
+    resource class for an API to share the error declarations across resources.
     """
 
     _name: str = ""
@@ -61,10 +71,11 @@ class BaseResource[C: APIClient]:
             )
         return self._http_client
 
-    @staticmethod
     def process_response[T](
+        self,
         response: requests.Response,
         struct: type[T],
+        errors: ErrorMap | None = None,
     ) -> T:
         """
         Perform the necessary processing on the retrieved data.
@@ -72,13 +83,54 @@ class BaseResource[C: APIClient]:
         The JSON data is processed and converted to msgspec structs. This includes the
         validation of the incoming data.
 
-        .. todo:: Implement proper error handling with response-shape aware structs.
+        :param errors: Operation-specific error declarations, taking precedence over
+          the resource-level :attr:`errors`.
+        :raises ClientResponseError: if the response has a 4xx or 5xx status code.
         """
-        # for now: assume no errors :)
-        # response.raise_for_status()
+        if not response.ok:
+            # operation-level declarations take precedence
+            all_errors: dict[StatusKey, object] = dict(self.errors)
+            if errors:
+                all_errors.update(errors)
+            raise self.build_response_error(response, errors=all_errors)
 
         response_data = response.json()
         return msgspec.convert(response_data, type=struct)
+
+    def build_response_error(
+        self, response: requests.Response, errors: ErrorMap
+    ) -> ClientResponseError:
+        """
+        Build the exception for an error response, decoding the body if possible.
+
+        Decoding failures of the error body are not raised - the error response itself
+        is the more relevant information. Override this for API-specific exception
+        classes.
+        """
+        body: object = None
+        if (error_type := resolve_error_type(errors, response.status_code)) is not None:
+            try:
+                body = msgspec.json.decode(response.content, type=error_type)
+            except msgspec.DecodeError:  # also covers ValidationError
+                logger.warning(
+                    "Error response body of %s %s does not match the declared type %r",
+                    response.request.method if response.request else "?",
+                    response.url,
+                    error_type,
+                    exc_info=True,
+                )
+
+        return ClientResponseError(
+            f"{response.status_code} {response.reason} for url: {response.url}",
+            response=response,
+            body=body,
+        )
+
+    def _request(self, method: str, path: str, **kwargs) -> requests.Response:
+        try:
+            return self.http_client.request(method, path, **kwargs)
+        except requests.RequestException as exc:
+            raise ClientIOError(str(exc)) from exc
 
     def _get(
         self,
@@ -87,9 +139,7 @@ class BaseResource[C: APIClient]:
         params: QueryParams | None = None,
     ) -> requests.Response:
         query_params = params.as_params() if params is not None else None
-        response = self.http_client.request(
-            "get", path, headers=headers, params=query_params
-        )
+        response = self._request("get", path, headers=headers, params=query_params)
         return response
 
     def _post(
@@ -100,7 +150,7 @@ class BaseResource[C: APIClient]:
         json: object = None,  # typed as Any in requests
     ) -> requests.Response:
         query_params = params.as_params() if params is not None else None
-        response = self.http_client.request(
+        response = self._request(
             "post",
             path,
             headers=headers,
