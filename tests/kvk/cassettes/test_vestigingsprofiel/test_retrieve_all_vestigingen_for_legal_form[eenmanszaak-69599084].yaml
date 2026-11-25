@@ -1,0 +1,190 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - KvKClient
+    method: GET
+    uri: https://api.kvk.nl/test/api/v1/basisprofielen/69599084/vestigingen
+  response:
+    body:
+      string: '{"kvkNummer":"69599084","aantalCommercieleVestigingen":2,"aantalNietCommercieleVestigingen":0,"totaalAantalVestigingen":2,"vestigingen":[{"vestigingsnummer":"000038509504","eersteHandelsnaam":"Test
+        EMZ Dagobert","indHoofdvestiging":"Ja","indAdresAfgeschermd":"Nee","indCommercieleVestiging":"Ja","volledigAdres":"Abebe
+        Bikilalaan 17 M                                 1034WL Amsterdam","links":[{"rel":"self","href":"https://api.kvk.nl/test/api/v1/basisprofielen/69599084/hoofdvestiging"},{"rel":"vestigingsprofiel","href":"https://api.kvk.nl/test/api/v1/vestigingsprofielen/000038509504"}]},{"vestigingsnummer":"000038509520","eersteHandelsnaam":"Test
+        EMZ Nevenvestiging Govert","indHoofdvestiging":"Nee","indAdresAfgeschermd":"Nee","indCommercieleVestiging":"Ja","volledigAdres":"Geneinde
+        73                                 6223GT Maastricht","links":[{"rel":"vestigingsprofiel","href":"https://api.kvk.nl/test/api/v1/vestigingsprofielen/000038509520"}]}],"links":[{"rel":"self","href":"https://api.kvk.nl/test/api/v1/basisprofielen/69599084/vestigingen"},{"rel":"basisprofiel","href":"https://api.kvk.nl/test/api/v1/basisprofielen/69599084"}]}'
+    headers:
+      API-Version:
+      - 1.5.0
+      Cache-Control:
+      - no-store
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '381'
+      Content-Security-Policy:
+      - frame-ancestors 'none', default-src 'none'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Nov 2026 09:48:11 GMT
+      Feature-Policy:
+      - '''none'''
+      Keep-Alive:
+      - timeout=60
+      Referrer-Policy:
+      - no-referrer
+      Server:
+      - unknown
+      Strict-Transport-Security:
+      - max-age=157680002; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      ap:
+      - Prerelease BR
+      apiAuthzDetails:
+      - Not Set|l7xx1f2691f2520d487b902f4e0b57a0b197|0feb89a2-67e4-4af4-a4fd-24533eaeeee9|quota?ok|rate?
+      counter.id:
+      - ''
+    status:
+      code: 200
+      message: ''
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - KvKClient
+    method: GET
+    uri: https://api.kvk.nl/test/api/v1/vestigingsprofielen/000038509504
+  response:
+    body:
+      string: '{"vestigingsnummer":"000038509504","kvkNummer":"69599084","indNonMailing":"Ja","formeleRegistratiedatum":"20200828","materieleRegistratie":{"datumAanvang":"20150828"},"eersteHandelsnaam":"Test
+        EMZ Dagobert","indHoofdvestiging":"Ja","indCommercieleVestiging":"Ja","voltijdWerkzamePersonen":1,"totaalWerkzamePersonen":1,"deeltijdWerkzamePersonen":0,"handelsnamen":[{"naam":"Test
+        EMZ Dagobert","volgorde":0},{"naam":"Tweede handelsnaam 1MZ","volgorde":1},{"naam":"Derde
+        handelsnaam 1MZ","volgorde":2},{"naam":"Vierde handelsnaam 1MZ","volgorde":3}],"adressen":[{"type":"bezoekadres","indAfgeschermd":"Nee","volledigAdres":"Abebe
+        Bikilalaan 17 M                         1034WL Amsterdam","straatnaam":"Abebe
+        Bikilalaan","huisnummer":17,"huisletter":"M","postcode":"1034WL","plaats":"Amsterdam","land":"Nederland"}],"sbiActiviteiten":[{"sbiCode":"10110","sbiOmschrijving":"Verwerking
+        en conservering van vlees, met uitzondering van vlees van gevogelte","indHoofdactiviteit":"Ja"},{"sbiCode":"10120","sbiOmschrijving":"Verwerking
+        en conservering van vlees van gevogelte","indHoofdactiviteit":"Nee"},{"sbiCode":"10130","sbiOmschrijving":"Vervaardiging
+        van vleesproducten","indHoofdactiviteit":"Nee"}],"links":[{"rel":"self","href":"https://api.kvk.nl/test/api/v1/vestigingsprofielen/000038509504"},{"rel":"basisprofiel","href":"https://api.kvk.nl/test/api/v1/basisprofielen/69599084"}]}'
+    headers:
+      API-Version:
+      - 1.5.0
+      Cache-Control:
+      - no-store
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '597'
+      Content-Security-Policy:
+      - frame-ancestors 'none', default-src 'none'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Nov 2026 09:48:11 GMT
+      Feature-Policy:
+      - '''none'''
+      Keep-Alive:
+      - timeout=60
+      Referrer-Policy:
+      - no-referrer
+      Server:
+      - unknown
+      Strict-Transport-Security:
+      - max-age=157680002; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      ap:
+      - Prerelease BR
+      apiAuthzDetails:
+      - Not Set|l7xx1f2691f2520d487b902f4e0b57a0b197|0feb89a2-67e4-4af4-a4fd-24533eaeeee9|quota?ok|rate?
+      counter.id:
+      - ''
+    status:
+      code: 200
+      message: ''
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - KvKClient
+    method: GET
+    uri: https://api.kvk.nl/test/api/v1/vestigingsprofielen/000038509520
+  response:
+    body:
+      string: '{"vestigingsnummer":"000038509520","kvkNummer":"69599084","indNonMailing":"Ja","formeleRegistratiedatum":"20170710","materieleRegistratie":{"datumAanvang":"20170108"},"eersteHandelsnaam":"Test
+        EMZ Nevenvestiging Govert","indHoofdvestiging":"Nee","indCommercieleVestiging":"Ja","voltijdWerkzamePersonen":1,"totaalWerkzamePersonen":1,"deeltijdWerkzamePersonen":0,"handelsnamen":[{"naam":"Test
+        EMZ Nevenvestiging Govert","volgorde":0},{"naam":"Tweede handelsnaam Vestiging2","volgorde":1},{"naam":"Derde
+        handelsnaam Vestiging2","volgorde":2},{"naam":"Vierde handelsnaam Vestiging2","volgorde":3}],"adressen":[{"type":"correspondentieadres","indAfgeschermd":"Nee","volledigAdres":"Watermolenlaan
+        1                         3440AD Woerden","straatnaam":"Watermolenlaan","huisnummer":1,"postcode":"3447GT","plaats":"Woerden","land":"Nederland"},{"type":"bezoekadres","indAfgeschermd":"Nee","volledigAdres":"Geneinde
+        73                         6223GT Maastricht","straatnaam":"Geneinde","huisnummer":73,"postcode":"6223GT","plaats":"Maastricht","land":"Nederland"}],"sbiActiviteiten":[{"sbiCode":"30310","sbiOmschrijving":"Vervaardiging
+        van civiele lucht- en ruimtevaartuigen en aanverwante toestellen","indHoofdactiviteit":"Ja"},{"sbiCode":"47730","sbiOmschrijving":"Detailhandel
+        in farmaceutische artikelen","indHoofdactiviteit":"Nee"},{"sbiCode":"30400","sbiOmschrijving":"Vervaardiging
+        van militaire gevechtsvoertuigen","indHoofdactiviteit":"Nee"}],"links":[{"rel":"self","href":"https://api.kvk.nl/test/api/v1/vestigingsprofielen/000038509520"},{"rel":"basisprofiel","href":"https://api.kvk.nl/test/api/v1/basisprofielen/69599084"}]}'
+    headers:
+      API-Version:
+      - 1.5.0
+      Cache-Control:
+      - no-store
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '682'
+      Content-Security-Policy:
+      - frame-ancestors 'none', default-src 'none'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Nov 2026 09:48:12 GMT
+      Feature-Policy:
+      - '''none'''
+      Keep-Alive:
+      - timeout=60
+      Referrer-Policy:
+      - no-referrer
+      Server:
+      - unknown
+      Strict-Transport-Security:
+      - max-age=157680002; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      ap:
+      - Prerelease BR
+      apiAuthzDetails:
+      - Not Set|l7xx1f2691f2520d487b902f4e0b57a0b197|0feb89a2-67e4-4af4-a4fd-24533eaeeee9|quota?ok|rate?
+      counter.id:
+      - ''
+    status:
+      code: 200
+      message: ''
+version: 1

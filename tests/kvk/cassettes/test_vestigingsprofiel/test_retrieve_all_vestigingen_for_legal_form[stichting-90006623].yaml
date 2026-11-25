@@ -1,0 +1,184 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - KvKClient
+    method: GET
+    uri: https://api.kvk.nl/test/api/v1/basisprofielen/90006623/vestigingen
+  response:
+    body:
+      string: '{"kvkNummer":"90006623","aantalCommercieleVestigingen":1,"aantalNietCommercieleVestigingen":1,"totaalAantalVestigingen":2,"vestigingen":[{"vestigingsnummer":"990064773193","eersteHandelsnaam":"Stichting
+        Uc027Tc01Tg01 1652253635399","indHoofdvestiging":"Ja","indAdresAfgeschermd":"Nee","indCommercieleVestiging":"Ja","volledigAdres":"Sint
+        Jacobsstraat 300 3511BT Utrecht","links":[{"rel":"self","href":"https://api.kvk.nl/test/api/v1/basisprofielen/90006623/hoofdvestiging"},{"rel":"vestigingsprofiel","href":"https://api.kvk.nl/test/api/v1/vestigingsprofielen/990064773193"}]},{"vestigingsnummer":"990064773207","eersteHandelsnaam":"Naam
+        vestiging die veel en veel te lang is dus afgekort 1652253635399","indHoofdvestiging":"Nee","indAdresAfgeschermd":"Nee","indCommercieleVestiging":"Nee","volledigAdres":"De
+        Ruijterkade 5 1013AA Amsterdam","links":[{"rel":"vestigingsprofiel","href":"https://api.kvk.nl/test/api/v1/vestigingsprofielen/990064773207"}]}],"links":[{"rel":"self","href":"https://api.kvk.nl/test/api/v1/basisprofielen/90006623/vestigingen"},{"rel":"basisprofiel","href":"https://api.kvk.nl/test/api/v1/basisprofielen/90006623"}]}'
+    headers:
+      API-Version:
+      - 1.5.0
+      Cache-Control:
+      - no-store
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '417'
+      Content-Security-Policy:
+      - frame-ancestors 'none', default-src 'none'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Nov 2026 09:48:13 GMT
+      Feature-Policy:
+      - '''none'''
+      Keep-Alive:
+      - timeout=60
+      Referrer-Policy:
+      - no-referrer
+      Server:
+      - unknown
+      Strict-Transport-Security:
+      - max-age=157680002; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      ap:
+      - Prerelease BR
+      apiAuthzDetails:
+      - Not Set|l7xx1f2691f2520d487b902f4e0b57a0b197|0feb89a2-67e4-4af4-a4fd-24533eaeeee9|quota?ok|rate?
+      counter.id:
+      - ''
+    status:
+      code: 200
+      message: ''
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - KvKClient
+    method: GET
+    uri: https://api.kvk.nl/test/api/v1/vestigingsprofielen/990064773193
+  response:
+    body:
+      string: '{"vestigingsnummer":"990064773193","kvkNummer":"90006623","rsin":"990983419","indNonMailing":"Nee","formeleRegistratiedatum":"20220511","materieleRegistratie":{"datumAanvang":"20120511"},"statutaireNaam":"Stichting
+        Uc027Tc01Tg01 1652253635399","eersteHandelsnaam":"Stichting Uc027Tc01Tg01
+        1652253635399","indHoofdvestiging":"Ja","indCommercieleVestiging":"Ja","voltijdWerkzamePersonen":3,"totaalWerkzamePersonen":4,"deeltijdWerkzamePersonen":1,"handelsnamen":[{"naam":"Stichting
+        Uc027Tc01Tg01 1652253635399","volgorde":0},{"naam":"Mijn 2e handelsnaam 165225363539","volgorde":1},{"naam":"Mijn
+        3e handelsnaam 165225363539","volgorde":2}],"adressen":[{"type":"bezoekadres","indAfgeschermd":"Nee","volledigAdres":"Sint
+        Jacobsstraat 300 3511BT Utrecht","straatnaam":"Sint Jacobsstraat","huisnummer":300,"postcode":"3511BT","plaats":"Utrecht","land":"Nederland"}],"websites":["www.domeinnaam1.nl","www.domeinnaam2.nl","www.domeinnaam3.nl"],"sbiActiviteiten":[{"sbiCode":"01241","sbiOmschrijving":"Teelt
+        van appels en peren","indHoofdactiviteit":"Ja"}],"links":[{"rel":"self","href":"https://api.kvk.nl/test/api/v1/vestigingsprofielen/990064773193"},{"rel":"basisprofiel","href":"https://api.kvk.nl/test/api/v1/basisprofielen/90006623"}]}'
+    headers:
+      API-Version:
+      - 1.5.0
+      Cache-Control:
+      - no-store
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '583'
+      Content-Security-Policy:
+      - frame-ancestors 'none', default-src 'none'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Nov 2026 09:48:13 GMT
+      Feature-Policy:
+      - '''none'''
+      Keep-Alive:
+      - timeout=60
+      Referrer-Policy:
+      - no-referrer
+      Server:
+      - unknown
+      Strict-Transport-Security:
+      - max-age=157680002; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      ap:
+      - Prerelease BR
+      apiAuthzDetails:
+      - Not Set|l7xx1f2691f2520d487b902f4e0b57a0b197|0feb89a2-67e4-4af4-a4fd-24533eaeeee9|quota?ok|rate?
+      counter.id:
+      - ''
+    status:
+      code: 200
+      message: ''
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - KvKClient
+    method: GET
+    uri: https://api.kvk.nl/test/api/v1/vestigingsprofielen/990064773207
+  response:
+    body:
+      string: '{"vestigingsnummer":"990064773207","kvkNummer":"90006623","rsin":"990983419","indNonMailing":"Nee","formeleRegistratiedatum":"20220511","materieleRegistratie":{"datumAanvang":"20120511"},"statutaireNaam":"Stichting
+        Uc027Tc01Tg01 1652253635399","eersteHandelsnaam":"Naam vestiging die veel
+        en veel te lang is dus afgekort 1652253635399","indHoofdvestiging":"Nee","indCommercieleVestiging":"Nee","adressen":[{"type":"bezoekadres","indAfgeschermd":"Nee","volledigAdres":"De
+        Ruijterkade 5 1013AA Amsterdam","straatnaam":"De Ruijterkade","huisnummer":5,"postcode":"1013AA","plaats":"Amsterdam","land":"Nederland"}],"websites":["www.domeinnaam1.nl","www.domeinnaam2.nl","www.domeinnaam3.nl"],"sbiActiviteiten":[{"sbiCode":"01241","sbiOmschrijving":"Teelt
+        van appels en peren","indHoofdactiviteit":"Ja"}],"links":[{"rel":"self","href":"https://api.kvk.nl/test/api/v1/vestigingsprofielen/990064773207"},{"rel":"basisprofiel","href":"https://api.kvk.nl/test/api/v1/basisprofielen/90006623"}]}'
+    headers:
+      API-Version:
+      - 1.5.0
+      Cache-Control:
+      - no-store
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '534'
+      Content-Security-Policy:
+      - frame-ancestors 'none', default-src 'none'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Nov 2026 09:48:13 GMT
+      Feature-Policy:
+      - '''none'''
+      Keep-Alive:
+      - timeout=60
+      Referrer-Policy:
+      - no-referrer
+      Server:
+      - unknown
+      Strict-Transport-Security:
+      - max-age=157680002; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      ap:
+      - Prerelease BR
+      apiAuthzDetails:
+      - Not Set|l7xx1f2691f2520d487b902f4e0b57a0b197|0feb89a2-67e4-4af4-a4fd-24533eaeeee9|quota?ok|rate?
+      counter.id:
+      - ''
+    status:
+      code: 200
+      message: ''
+version: 1

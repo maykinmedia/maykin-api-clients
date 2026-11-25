@@ -1,0 +1,64 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - KvKClient
+    method: GET
+    uri: https://api.kvk.nl/test/api/v1/naamgevingen/kvknummer/90005414
+  response:
+    body:
+      string: '{"kvkNummer":"90005414","rsin":"869229436","naam":"Regional Qvolane
+        - MA","startdatum":"20110101","einddatum":"20110218","vestigingen":[{"vestigingsnummer":"990000216645","eersteHandelsnaam":"Regional
+        Qvolane","handelsnamen":[{"naam":"Regional Qvolane","volgorde":0}],"links":[{"rel":"vestigingsprofiel","href":"https://api.kvk.nl/test/api/v1/vestigingsprofielen/990000216645","title":"Gegevens
+        van een specifieke vestiging van een inschrijving in het Handelsregister."}]},{"vestigingsnummer":"990000821206","eersteHandelsnaam":"Regional
+        Qvolane","handelsnamen":[{"naam":"Regional Qvolane","volgorde":0}],"links":[{"rel":"vestigingsprofiel","href":"https://api.kvk.nl/test/api/v1/vestigingsprofielen/990000821206","title":"Gegevens
+        van een specifieke vestiging van een inschrijving in het Handelsregister."}]}],"links":[{"rel":"self","href":"https://api.kvk.nl/test/api/v1/naamgevingen/kvknummer/90005414"},{"rel":"basisprofiel","href":"https://api.kvk.nl/test/api/v1/basisprofielen/90005414","title":"Basisgegevens
+        van een inschrijving in het Handelsregister."}]}'
+    headers:
+      API-Version:
+      - 1.3.0
+      Cache-Control:
+      - no-store
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '349'
+      Content-Security-Policy:
+      - frame-ancestors 'none', default-src 'none'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Nov 2026 09:48:07 GMT
+      Feature-Policy:
+      - '''none'''
+      Keep-Alive:
+      - timeout=60
+      Referrer-Policy:
+      - no-referrer
+      Server:
+      - unknown
+      Strict-Transport-Security:
+      - max-age=157680002; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      ap:
+      - Prerelease BR
+      apiAuthzDetails:
+      - Not Set|l7xx1f2691f2520d487b902f4e0b57a0b197|0feb89a2-67e4-4af4-a4fd-24533eaeeee9|quota?ok|rate?
+      counter.id:
+      - ''
+    status:
+      code: 200
+      message: ''
+version: 1
