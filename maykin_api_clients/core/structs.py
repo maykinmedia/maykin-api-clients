@@ -14,12 +14,16 @@ FIXME: adding the 'type' keyword  doesn't work, msgspec does not support these
 "custom types"
 """
 
-UNSET: Final[UnsetType] = msgspec.UNSET
+UNSET: Final = msgspec.UNSET
 """
 Constant
 
 The type alias is a library implementation detail that serves as anti-corruption layer
 and preventing leaky abstractions.
+
+Note: deliberately not annotated as ``Final[UnsetType]`` - that widens the inferred
+``Literal[UnsetType.UNSET]`` (msgspec's stubs declare it as an enum member) to
+``UnsetType``, which breaks type narrowing with ``x is not UNSET``.
 """
 
 
