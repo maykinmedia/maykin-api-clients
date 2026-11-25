@@ -7,12 +7,14 @@ Record cassettes with ``pytest tests/kvk --record-mode=once``.
 import pytest
 
 from maykin_api_clients.contrib.kvk import BasisprofielParams, KvKClient
-from maykin_api_clients.core import UNSET
+from maykin_api_clients.core import UNSET, ClientResponseError
 
 from .data import (
+    ERROR_KVK_NUMMERS,
     VALID_KVK_NUMMERS,
     WITH_VESTIGINGEN,
     WITHOUT_VESTIGINGEN,
+    not_deliverable_error_factory,
 )
 
 
@@ -44,6 +46,19 @@ def test_retrieve_hoofdvestiging(kvk_client: KvKClient, kvk_nummer: str):
 
 
 @pytest.mark.vcr
+@pytest.mark.parametrize("kvk_nummer", WITHOUT_VESTIGINGEN)
+def test_retrieve_hoofdvestiging_without_vestigingen(
+    kvk_client: KvKClient, kvk_nummer: str
+):
+    with pytest.raises(ClientResponseError) as exc_info:
+        kvk_client.Basisprofiel.hoofdvestiging(kvk_nummer=kvk_nummer)
+
+    exc = exc_info.value
+    assert exc.status_code == 404
+    assert exc.body == not_deliverable_error_factory(kvk_nummer)
+
+
+@pytest.mark.vcr
 @pytest.mark.parametrize("kvk_nummer", WITH_VESTIGINGEN)
 def test_list_vestigingen(kvk_client: KvKClient, kvk_nummer: str):
     vestiging_list = kvk_client.Basisprofiel.vestigingen(kvk_nummer=kvk_nummer)
@@ -62,6 +77,17 @@ def test_list_vestigingen_without_vestigingen(kvk_client: KvKClient, kvk_nummer:
     assert vestiging_list.totaal_aantal_vestigingen == 0
     # the key is omitted rather than an empty list
     assert vestiging_list.vestigingen is UNSET
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize("kvk_nummer", ERROR_KVK_NUMMERS)
+def test_retrieve_basisprofiel_error(kvk_client: KvKClient, kvk_nummer: str):
+    with pytest.raises(ClientResponseError) as exc_info:
+        kvk_client.Basisprofiel.retrieve(kvk_nummer=kvk_nummer)
+
+    exc = exc_info.value
+    assert exc.status_code == 404
+    assert exc.body == not_deliverable_error_factory(kvk_nummer)
 
 
 @pytest.mark.vcr

@@ -7,9 +7,9 @@ Record cassettes with ``pytest tests/kvk --record-mode=once``.
 import pytest
 
 from maykin_api_clients.contrib.kvk import KvKClient
-from maykin_api_clients.core import UNSET
+from maykin_api_clients.core import UNSET, ClientResponseError
 
-from .data import VALID_KVK_NUMMERS
+from .data import ERROR_KVK_NUMMERS, VALID_KVK_NUMMERS, not_deliverable_error_factory
 
 KVK_NUMMER = "68750110"
 
@@ -46,3 +46,14 @@ def test_retrieve_naamgeving_for_legal_form(kvk_client: KvKClient, kvk_nummer: s
         assert (vestiging.eerste_handelsnaam is not UNSET) or (
             vestiging.naam is not UNSET
         )
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize("kvk_nummer", ERROR_KVK_NUMMERS)
+def test_retrieve_naamgeving_error(kvk_client: KvKClient, kvk_nummer: str):
+    with pytest.raises(ClientResponseError) as exc_info:
+        kvk_client.Naamgeving.retrieve(kvk_nummer=kvk_nummer)
+
+    exc = exc_info.value
+    assert exc.status_code == 404
+    assert exc.body == not_deliverable_error_factory(kvk_nummer)

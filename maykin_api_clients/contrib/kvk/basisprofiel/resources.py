@@ -1,11 +1,11 @@
-from maykin_api_clients.core import BaseResource, RetrieveOperation
+from maykin_api_clients.core import RetrieveOperation
 
-from ..common import KvKNummerArgs
+from ..common import KvKNummerArgs, KvKResource
 from .parameters import BasisprofielArgs
 from .structs import Basisprofiel, Eigenaar, Vestiging, VestigingList
 
 
-class BasisprofielResource(BaseResource):
+class BasisprofielResource(KvKResource):
     retrieve = RetrieveOperation(
         path="v1/basisprofielen/{kvk_nummer}",
         call_args=BasisprofielArgs,

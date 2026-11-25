@@ -6,10 +6,13 @@ components, like addresses, links and the error shape. They're defined once here
 """
 
 from collections.abc import Mapping, Sequence
+from typing import ClassVar
 
 from maykin_api_clients.core import (
     UNSET,
+    BaseResource,
     BaseSchemaStruct,
+    ErrorMap,
     PathArgs,
     QueryParamsStruct,
     UnsetType,
@@ -161,8 +164,16 @@ class Fout(KvKStruct):
 class ErrorResponseBody(KvKStruct):
     """
     Error body for 4xx/5xx responses.
-
-    .. todo:: Wire up once the core supports response-shape aware error handling.
     """
 
     fout: Sequence[Fout] | UnsetType = UNSET
+
+
+class KvKResource(BaseResource):
+    """
+    Base resource for all KvK APIs - they share the same error response shape.
+
+    Note that a 401 has an empty body, which results in ``exc.body`` being ``None``.
+    """
+
+    errors: ClassVar[ErrorMap] = {"default": ErrorResponseBody}

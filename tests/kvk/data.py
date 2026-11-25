@@ -6,6 +6,8 @@ The test ids double as cassette names.
 
 import pytest
 
+from maykin_api_clients.contrib.kvk.common import ErrorResponseBody, Fout
+
 # registrations with an onderneming, and thus at least a hoofdvestiging
 WITH_VESTIGINGEN = [
     pytest.param("69599084", id="eenmanszaak-69599084"),
@@ -33,3 +35,22 @@ WITHOUT_VESTIGINGEN = [
 ]
 
 VALID_KVK_NUMMERS = WITH_VESTIGINGEN + WITHOUT_VESTIGINGEN
+
+# documented to return an error message
+ERROR_KVK_NUMMERS = [
+    pytest.param("90004973", id="error-90004973"),
+    pytest.param("90002903", id="error-90002903"),
+]
+
+
+def not_deliverable_error_factory(kvk_nummer: str) -> ErrorResponseBody:
+    """
+    The error body the test environment returns for all documented error cases.
+
+    Also returned by the hoofdvestiging endpoint for registrations without vestigingen.
+    """
+    omschrijving = (
+        f"Op basis van het KVK-nummer {kvk_nummer} kan het product niet worden "
+        "geleverd."
+    )
+    return ErrorResponseBody(fout=[Fout(code="IPD0005", omschrijving=omschrijving)])

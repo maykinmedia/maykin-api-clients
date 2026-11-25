@@ -1,10 +1,10 @@
-from maykin_api_clients.core import BaseResource, RetrieveOperation
+from maykin_api_clients.core import RetrieveOperation
 
-from ..common import Vestiging
+from ..common import KvKResource, Vestiging
 from .parameters import VestigingsprofielArgs
 
 
-class VestigingsprofielResource(BaseResource):
+class VestigingsprofielResource(KvKResource):
     retrieve = RetrieveOperation(
         path="v1/vestigingsprofielen/{vestigingsnummer}",
         call_args=VestigingsprofielArgs,

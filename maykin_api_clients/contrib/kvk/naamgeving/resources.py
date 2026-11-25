@@ -1,10 +1,10 @@
-from maykin_api_clients.core import BaseResource, RetrieveOperation
+from maykin_api_clients.core import RetrieveOperation
 
-from ..common import KvKNummerArgs
+from ..common import KvKNummerArgs, KvKResource
 from .structs import Naamgeving
 
 
-class NaamgevingResource(BaseResource):
+class NaamgevingResource(KvKResource):
     retrieve = RetrieveOperation(
         path="v1/naamgevingen/kvknummer/{kvk_nummer}",
         call_args=KvKNummerArgs,
