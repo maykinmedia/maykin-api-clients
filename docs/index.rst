@@ -20,6 +20,7 @@ Features
    :maxdepth: 2
 
    quickstart
+   reference/index
    changelog
 
 .. |build-status| image:: https://github.com/maykinmedia/maykin-api-clients/actions/workflows/ci.yml/badge.svg

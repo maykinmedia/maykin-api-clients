@@ -1,0 +1,30 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: http://localhost:8000/todos/05442685-15d4-49a6-abd9-2ed0a4bbe73e
+  response:
+    body:
+      string: '{"uuid":"05442685-15d4-49a6-abd9-2ed0a4bbe73e","title":"Write tests","done":false,"completedOn":null}'
+    headers:
+      content-length:
+      - '101'
+      content-type:
+      - application/json
+      date:
+      - Sat, 21 Nov 2026 18:23:05 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+version: 1

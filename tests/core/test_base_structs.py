@@ -1,8 +1,7 @@
 import msgspec
 import pytest
 
-from maykin_api_clients.core.query_params import QueryParamsStruct
-from maykin_api_clients.core.structs import BaseSchemaStruct
+from maykin_api_clients.core import BaseSchemaStruct, QueryParamsStruct
 
 
 def test_derived_structs_do_not_accept_positional_arguments():
