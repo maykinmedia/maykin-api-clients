@@ -81,10 +81,6 @@ class _MyToDo(ToDo):
     optional_arg: str = "default"
 
 
-class CustomClient(APIClient):
-    ToDo = TodoResource(todo=_MyToDo)
-
-
 #
 # Tests
 #
@@ -176,6 +172,9 @@ def test_custom_return_type_struct(api_client: APIClient):
 
 
 def test_client_resource_customization():
+    class CustomClient(APIClient):
+        ToDo = TodoResource(todo=_MyToDo)
+
     with CustomClient(base_url="http://localhost:8000") as client:
         todos = client.ToDo.list()
         todo = client.ToDo.retrieve(uuid="05442685-15d4-49a6-abd9-2ed0a4bbe73e")
