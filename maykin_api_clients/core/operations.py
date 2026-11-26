@@ -6,86 +6,22 @@ Provide declarative, statically typed API operations boilerplate.
 
 from __future__ import annotations
 
-import copy
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import asdict, is_dataclass
 from typing import (
     TYPE_CHECKING,
     Self,
-    TypeVar,
-    final,
     overload,
 )
 
 import msgspec
 from ape_pie.decorators import EndpointMethod
 from requests import Response
-from typing_extensions import ParamSpec
 
 from .resources import BaseResource
 
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
-
-# can't set a bound, because even a detail endoint could return something other than
-# a mapping/dict
-R = TypeVar("R")
-P = ParamSpec("P", default=[])  # default for when P is empty and cannot be inferred
-
-
-#
-# (Path) argument handling
-#
-
-T = TypeVar("T")
-
-
-#
-# (Generic) operations
-#
-
-
-class Operation:
-    """
-    Base API resource operation implementation, providing the common behaviour.
-
-    An operation is an HTTP call of a particular method provided on a particular
-    resource endpoint.
-    """
-
-    _name: str = ""
-    _resource: BaseResource | None = None
-
-    def __set_name__(self, owner: type[BaseResource], name: str) -> None:
-        self._name = name
-
-    def __get__(self, resource: BaseResource | None, owner: type[BaseResource]) -> Self:
-        # class attribute access
-        if resource is None:
-            return self
-
-        # bind the resource
-        bound = copy.copy(self)
-        bound._resource = resource
-        # Cache on the instance. Because this is a non-data descriptor
-        # (disabled __set__), the instance attribute now shadows it, so later
-        # accesses skip __get__ and return the same bound resource.
-        resource.__dict__[self._name] = bound
-
-        return bound
-
-    def __set__(self, *args, **kwargs):
-        raise NotImplementedError("Deliberately not supported.")
-
-    @final
-    @property
-    def resource(self) -> BaseResource:
-        if self._resource is None:
-            raise RuntimeError(
-                f"{type(self).__name__} is not bound to a resources; access it through "
-                "a bound resource from the client."
-            )
-        return self._resource
 
 
 def process_response[T](response: Response, into: type[T]) -> T:
