@@ -147,34 +147,49 @@ class _Operation[T, **P]:
         return _Operation(call_with_override)
 
 
-class _OperationMethod[S, **P, T]:
+class _OperationMethod[S: BaseResource, **P, T]:
     """
     Descriptor binding an :func:`operation` to the resource it's accessed through.
     """
+
+    _name: str = ""
 
     def __init__(self, e: EndpointMethod[S, P, tuple[Response, type[T]]]) -> None:
         self.e = e
         self.__doc__ = e.__doc__
         self.__wrapped__ = e
 
+    def __set_name__(self, owner: type[S], name: str) -> None:
+        self._name = name
+
     @overload
-    def __get__(self, instance: None, owner: type[object] | None = None) -> Self: ...
+    def __get__(self, resource: None, owner: type[object] | None = None) -> Self: ...
 
     @overload
     def __get__(
-        self, instance: S, owner: type[object] | None = None
+        self, resource: S, owner: type[object] | None = None
     ) -> _Operation[T, P]: ...
 
     def __get__(
-        self, instance: S | None, owner: type[object] | None = None
+        self, resource: S | None, owner: type[object] | None = None
     ) -> Self | _Operation[T, P]:
+
         # class attribute access
-        if instance is None:
+        if resource is None:
             return self
-        return _Operation(self.e.__get__(instance, owner))
+
+        operation = _Operation(self.e.__get__(resource, owner))
+        # Cache on the resource. Because this is a non-data descriptor
+        # (disabled __set__), the resource attribute now shadows it, so later
+        # accesses skip __get__ and return the same bound resource.
+        resource.__dict__[self._name] = operation
+        return operation
+
+    def __set__(self, *args, **kwargs):
+        raise NotImplementedError("Deliberately not supported.")
 
 
-def operation[S, **P, T](
+def operation[S: BaseResource, **P, T](
     e: EndpointMethod[S, P, tuple[Response, type[T]]],
 ) -> _OperationMethod[S, P, T]:
     """
