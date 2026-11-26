@@ -17,7 +17,6 @@ import inspect
 import string
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import asdict, is_dataclass
-from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Generic,
@@ -30,6 +29,7 @@ from typing import (
 from urllib.parse import quote
 
 import msgspec
+from ape_pie.decorators import EndpointMethod
 from requests import Response
 from typing_extensions import ParamSpec
 
@@ -322,56 +322,88 @@ A funtion or method that returns an HTTP response and the struct to decode it in
 """
 
 
-class _Operation[T, R, **P]:
+class _Operation[T, **P]:
     """
-    Process the HTTP response of ``f`` into ``T``, or into ``R`` if a return override
-    is given.
+    An operation bound to a resource.
+
+    Calling it makes the HTTP call and processes the response into ``T``.
     """
 
-    # without an override, the output shape is the one returned by ``f``, so R is T
-    @overload
-    def __init__[T_, **P_](
-        self: _Operation[T_, T_, P_],
-        f: HttpCallFunc[T_, P_],
-        return_override: None = None,
-    ) -> None: ...
-
-    @overload
-    def __init__[T_, R_, **P_](
-        self: _Operation[T_, R_, P_],
-        f: HttpCallFunc[T_, P_],
-        return_override: type[R_],
-    ) -> None: ...
-
-    def __init__(
-        self,
-        f: HttpCallFunc[T, P],
-        return_override: type[R] | None = None,
-    ) -> None:
+    def __init__(self, f: HttpCallFunc[T, P]) -> None:
         self.f = f
-        self.return_override = return_override
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T | R:
-        output_shape: type[R | T]
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T:
         response, output_shape = self.f(*args, **kwargs)
-        output_shape = self.return_override or output_shape
         return process_response(response, into=output_shape)
 
+    def returning[R](self, returns: type[R]) -> _Operation[R, P]:
+        """
+        Derive the same operation, but processing the response into ``returns``.
 
-def operation[T, **P](f: HttpCallFunc[T, P]) -> Callable[P, T]:
+        .. code-block:: python
+
+            todo = client.ToDo.retrieve.returning(CustomToDo)(uuid=...)
+        """
+        f = self.f
+
+        def call_with_override(
+            *args: P.args, **kwargs: P.kwargs
+        ) -> tuple[Response, type[R]]:
+            response, _ = f(*args, **kwargs)
+            return response, returns
+
+        return _Operation(call_with_override)
+
+
+class _OperationMethod[S, **P, T]:
     """
-    Mark a callable as a JSON API operation.
+    Descriptor binding an :func:`operation` to the resource it's accessed through.
+    """
+
+    def __init__(self, e: EndpointMethod[S, P, tuple[Response, type[T]]]) -> None:
+        self.e = e
+        self.__doc__ = e.__doc__
+        self.__wrapped__ = e
+
+    @overload
+    def __get__(self, instance: None, owner: type[object] | None = None) -> Self: ...
+
+    @overload
+    def __get__(
+        self, instance: S, owner: type[object] | None = None
+    ) -> _Operation[T, P]: ...
+
+    def __get__(
+        self, instance: S | None, owner: type[object] | None = None
+    ) -> Self | _Operation[T, P]:
+        # class attribute access
+        if instance is None:
+            return self
+        return _Operation(self.e.__get__(instance, owner))
+
+
+def operation[S, **P, T](
+    e: EndpointMethod[S, P, tuple[Response, type[T]]],
+) -> _OperationMethod[S, P, T]:
+    """
+    Mark an ``@endpoint`` resource method as a JSON API operation.
+
+    The method returns the HTTP response and the struct to decode it into. Calling
+    the operation processes the response into that struct. Use
+    ``.returning(OtherStruct)`` to process it into another struct for a single call.
+
+    .. code-block:: python
+
+        class TodoResource(BaseResource["APIClient"]):
+            @operation
+            @endpoint("todos/{uuid}")
+            def retrieve(self, url_path: str, /, uuid: UUID):
+                return self.http_client.get(url_path), ToDo
 
     .. todo:: accept arguments, e.g. to override the (default) process_response
       callable. This must support composition.
     """
-    operation = _Operation(f)
-
-    @wraps(f)
-    def decorator(*args: P.args, **kwargs: P.kwargs) -> T:
-        return operation(*args, **kwargs)
-
-    return decorator
+    return _OperationMethod(e)
 
 
 type ParamValuePrimitive = str | int | float

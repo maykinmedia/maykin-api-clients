@@ -6,13 +6,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, assert_type
+from typing import TYPE_CHECKING, Generic, assert_type
 from uuid import UUID
 
 import pytest
 from ape_pie import APIClient as BaseClient
 from ape_pie.decorators import endpoint
-from requests import Response
 from typing_extensions import TypeVar
 
 from maykin_api_clients.core import (
@@ -42,41 +41,50 @@ class TodoParams(QueryParamsStruct, rename="camel"):
     optional_query: str | UnsetType = UNSET
 
 
-RT = TypeVar("RT", bound=BaseSchemaStruct, default=ToDo)
+TD = TypeVar("TD", bound=ToDo, default=ToDo)
+"""
+The ToDo struct of a resource, which API dialects can replace with a subclass.
+"""
 
 
-class TodoResource(BaseResource["APIClient"]):
-    @endpoint("todos")
+class TodoResource(BaseResource["APIClient"], Generic[TD]):
+    def __init__(self, todo: type[TD] = ToDo) -> None:
+        self.todo = todo
+
     @operation
+    @endpoint("todos")
     def list(self, url_path: str, /, params: TodoParams | None = None):
         return (
             self.http_client.get(url_path, params=as_params(params)),
-            Sequence[ToDo],
+            Sequence[self.todo],
         )
 
+    @operation
     @endpoint("todos/{uuid}")
-    @operation
     def retrieve(
-        self,
-        url_path: str,
-        /,
-        uuid: UUID | str,
-        params: TodoParams | None = None,
-        returns: type[RT] = ToDo,
-    ) -> tuple[Response, type[RT]]:
-        return (self.http_client.get(url_path, params=as_params(params)), returns)
+        self, url_path: str, /, uuid: UUID | str, params: TodoParams | None = None
+    ):
+        return (self.http_client.get(url_path, params=as_params(params)), self.todo)
 
-    @endpoint("todos")
     @operation
+    @endpoint("todos")
     def create(self, url_path: str, /, payload: ToDo):
         return (
             self.http_client.post(url_path, json=as_json(payload)),
-            ToDo,
+            self.todo,
         )
 
 
 class APIClient(BaseClient):
     ToDo = TodoResource()
+
+
+class _MyToDo(ToDo):
+    optional_arg: str = "default"
+
+
+class CustomClient(APIClient):
+    ToDo = TodoResource(todo=_MyToDo)
 
 
 #
@@ -158,8 +166,8 @@ def test_custom_return_type_struct(api_client: APIClient):
         title: str
         imaginary_attribute: str = "I do not exist"
 
-    todo = api_client.ToDo.retrieve(
-        uuid="05442685-15d4-49a6-abd9-2ed0a4bbe73e", returns=CustomToDo
+    todo = api_client.ToDo.retrieve.returning(CustomToDo)(
+        uuid="05442685-15d4-49a6-abd9-2ed0a4bbe73e"
     )
 
     assert_type(todo, CustomToDo)
@@ -167,3 +175,16 @@ def test_custom_return_type_struct(api_client: APIClient):
     assert todo.title == "Write tests"
     assert not hasattr(todo, "done")
     assert todo.imaginary_attribute == "I do not exist"
+
+
+def test_client_resource_customization():
+    with CustomClient(base_url="http://localhost:8000") as client:
+        todos = client.ToDo.list()
+        todo = client.ToDo.retrieve(uuid="05442685-15d4-49a6-abd9-2ed0a4bbe73e")
+
+    assert_type(todos, Sequence[_MyToDo])
+    assert len(todos) >= 2
+    assert all(isinstance(x, _MyToDo) for x in todos)
+    assert_type(todo, _MyToDo)
+    assert isinstance(todo, _MyToDo)
+    assert todo.optional_arg == "default"
