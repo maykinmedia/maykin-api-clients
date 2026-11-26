@@ -18,7 +18,15 @@ import string
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import asdict, is_dataclass
 from functools import wraps
-from typing import TYPE_CHECKING, Generic, Self, TypeVar, final, get_origin
+from typing import (
+    TYPE_CHECKING,
+    Generic,
+    Self,
+    TypeVar,
+    final,
+    get_origin,
+    overload,
+)
 from urllib.parse import quote
 
 import msgspec
@@ -314,18 +322,54 @@ A funtion or method that returns an HTTP response and the struct to decode it in
 """
 
 
-def operation[T, **P](f: HttpCallFunc[T, P]):
+class _Operation[T, R, **P]:
+    """
+    Process the HTTP response of ``f`` into ``T``, or into ``R`` if a return override
+    is given.
+    """
+
+    # without an override, the output shape is the one returned by ``f``, so R is T
+    @overload
+    def __init__[T_, **P_](
+        self: _Operation[T_, T_, P_],
+        f: HttpCallFunc[T_, P_],
+        return_override: None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__[T_, R_, **P_](
+        self: _Operation[T_, R_, P_],
+        f: HttpCallFunc[T_, P_],
+        return_override: type[R_],
+    ) -> None: ...
+
+    def __init__(
+        self,
+        f: HttpCallFunc[T, P],
+        return_override: type[R] | None = None,
+    ) -> None:
+        self.f = f
+        self.return_override = return_override
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T | R:
+        output_shape: type[R | T]
+        response, output_shape = self.f(*args, **kwargs)
+        output_shape = self.return_override or output_shape
+        return process_response(response, into=output_shape)
+
+
+def operation[T, **P](f: HttpCallFunc[T, P]) -> Callable[P, T]:
     """
     Mark a callable as a JSON API operation.
 
     .. todo:: accept arguments, e.g. to override the (default) process_response
       callable. This must support composition.
     """
+    operation = _Operation(f)
 
     @wraps(f)
     def decorator(*args: P.args, **kwargs: P.kwargs) -> T:
-        response, output_shape = f(*args, **kwargs)
-        return process_response(response, into=output_shape)
+        return operation(*args, **kwargs)
 
     return decorator
 
