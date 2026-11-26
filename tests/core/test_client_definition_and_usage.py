@@ -18,7 +18,6 @@ from maykin_api_clients.core import (
     UNSET,
     BaseResource,
     BaseSchemaStruct,
-    QueryParamsStruct,
     UnsetType,
 )
 from maykin_api_clients.core.operations import as_json, as_params, operation
@@ -37,7 +36,7 @@ class ToDo(BaseSchemaStruct, rename="camel"):
     done: bool = False
 
 
-class TodoParams(QueryParamsStruct, rename="camel"):
+class TodoParams(BaseSchemaStruct, rename="camel"):
     optional_query: str | UnsetType = UNSET
 
 
@@ -157,7 +156,7 @@ def test_type_inference(api_client: APIClient):
         retrieve_todo(uuid=3)  # pyright: ignore[reportArgumentType]
         retrieve_todo(
             uuid="a4cc47ba-cab1-4189-a58c-189a3d29d412",
-            params=QueryParamsStruct(),  # pyright: ignore[reportArgumentType]
+            params=BaseSchemaStruct(),  # pyright: ignore[reportArgumentType]
         )
 
 
