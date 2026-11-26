@@ -1,3 +1,6 @@
+import requests
+
+
 class ClientError(Exception):
     """
     Base exception class for all error raised by maykin-api-clients.
@@ -28,4 +31,16 @@ class ClientResponseError(ClientError):
 
     These are semantic errors that should usually be handled by the projects using the
     clients, different from the IO-errors that are HTTP-transport related.
+
+    :ivar response: The raw HTTP response.
+    :ivar status_code: The HTTP status code of the response.
+    :ivar body: The response body decoded into the type declared for this status code
+      (see :mod:`maykin_api_clients.core.errors`), or ``None`` if no type is declared
+      or the body doesn't match the declared type (e.g. an empty 401 response).
     """
+
+    def __init__(self, message: str, *, response: requests.Response, body: object):
+        super().__init__(message)
+        self.response = response
+        self.status_code = response.status_code
+        self.body = body
