@@ -6,16 +6,19 @@ Provide declarative, statically typed API operations boilerplate.
 
 from __future__ import annotations
 
+import inspect
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import asdict, is_dataclass
+from functools import WRAPPER_ASSIGNMENTS, update_wrapper, wraps
 from typing import (
     TYPE_CHECKING,
+    Concatenate,
     Self,
     overload,
 )
 
 import msgspec
-from ape_pie.decorators import EndpointMethod
+from ape_pie.decorators import EndpointMethod, _URLPath, endpoint
 from requests import Response
 
 from .resources import BaseResource
@@ -59,6 +62,10 @@ class _Operation[T, **P]:
 
     def __init__(self, f: HttpCallFunc[T, P]) -> None:
         self.f = f
+        update_wrapper(self, f, updated=())
+        # Resolved eagerly: following __wrapped__ to a bound endpoint method reaches the
+        # unbound endpoint's __signature__, which still includes ``self``.
+        self.__signature__ = inspect.signature(f)
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T:
         response, output_shape = self.f(*args, **kwargs)
@@ -74,6 +81,7 @@ class _Operation[T, **P]:
         """
         f = self.f
 
+        @wraps(self, updated=())
         def call_with_override(
             *args: P.args, **kwargs: P.kwargs
         ) -> tuple[Response, type[R]]:
@@ -92,7 +100,13 @@ class _OperationMethod[S: BaseResource, **P, T]:
 
     def __init__(self, e: EndpointMethod[S, P, tuple[Response, type[T]]]) -> None:
         self.e = e
-        self.__doc__ = e.__doc__
+        # Like functools.update_wrapper, which is typed for callables only. Skips
+        # copying __dict__, which holds the endpoint's internals.
+        for attr in WRAPPER_ASSIGNMENTS:
+            try:
+                setattr(self, attr, getattr(e, attr))
+            except AttributeError:
+                pass
         self.__wrapped__ = e
 
     def __set_name__(self, owner: type[S], name: str) -> None:
@@ -125,28 +139,36 @@ class _OperationMethod[S: BaseResource, **P, T]:
         raise NotImplementedError("Deliberately not supported.")
 
 
-def operation[S: BaseResource, **P, T](
-    e: EndpointMethod[S, P, tuple[Response, type[T]]],
-) -> _OperationMethod[S, P, T]:
+class operation:
     """
-    Mark an ``@endpoint`` resource method as a JSON API operation.
+    Mark a resource method as a JSON API operation on the endpoint ``path``.
 
-    The method returns the HTTP response and the struct to decode it into. Calling
-    the operation processes the response into that struct. Use
+    The path is formatted from the method's arguments, like
+    :class:`ape_pie.decorators.endpoint`, and passed as the first argument after
+    ``self``. The method returns the HTTP response and the struct to decode it into.
+    Calling the operation processes the response into that struct. Use
     ``.returning(OtherStruct)`` to process it into another struct for a single call.
 
     .. code-block:: python
 
         class TodoResource(BaseResource["APIClient"]):
-            @operation
-            @endpoint("todos/{uuid}")
+            @operation("todos/{uuid}")
             def retrieve(self, url_path: str, /, uuid: UUID):
                 return self.http_client.get(url_path), ToDo
 
     .. todo:: accept arguments, e.g. to override the (default) process_response
       callable. This must support composition.
     """
-    return _OperationMethod(e)
+
+    def __init__(self, path: str) -> None:
+        self._endpoint = endpoint(path)
+
+    def __call__[S: BaseResource, **P, T](
+        self,
+        f: Callable[Concatenate[S, _URLPath, P], tuple[Response, type[T]]],
+        /,
+    ) -> _OperationMethod[S, P, T]:
+        return _OperationMethod(self._endpoint(f))
 
 
 type ParamValuePrimitive = str | int | float
