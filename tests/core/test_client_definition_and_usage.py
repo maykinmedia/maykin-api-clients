@@ -6,12 +6,14 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, assert_type
 from uuid import UUID
 
 import pytest
 from ape_pie import APIClient as BaseClient
 from ape_pie.decorators import endpoint
+from requests import Response
+from typing_extensions import TypeVar
 
 from maykin_api_clients.core import (
     UNSET,
@@ -40,6 +42,9 @@ class TodoParams(QueryParamsStruct, rename="camel"):
     optional_query: str | UnsetType = UNSET
 
 
+RT = TypeVar("RT", bound=BaseSchemaStruct, default=ToDo)
+
+
 class TodoResource(BaseResource["APIClient"]):
     @endpoint("todos")
     @operation
@@ -52,9 +57,14 @@ class TodoResource(BaseResource["APIClient"]):
     @endpoint("todos/{uuid}")
     @operation
     def retrieve(
-        self, url_path: str, /, uuid: UUID | str, params: TodoParams | None = None
-    ):
-        return (self.http_client.get(url_path, params=as_params(params)), ToDo)
+        self,
+        url_path: str,
+        /,
+        uuid: UUID | str,
+        params: TodoParams | None = None,
+        returns: type[RT] = ToDo,
+    ) -> tuple[Response, type[RT]]:
+        return (self.http_client.get(url_path, params=as_params(params)), returns)
 
     @endpoint("todos")
     @operation
@@ -115,6 +125,7 @@ def test_client_can_use_path_parameters_for_retrieve(
 ):
     todo = api_client.ToDo.retrieve(uuid=uuid)
 
+    assert_type(todo, ToDo)
     assert todo.title == "Write tests"
     assert todo.done is False
 
@@ -140,3 +151,19 @@ def test_type_inference(api_client: APIClient):
             uuid="a4cc47ba-cab1-4189-a58c-189a3d29d412",
             params=QueryParamsStruct(),  # pyright: ignore[reportArgumentType]
         )
+
+
+def test_custom_return_type_struct(api_client: APIClient):
+    class CustomToDo(BaseSchemaStruct):
+        title: str
+        imaginary_attribute: str = "I do not exist"
+
+    todo = api_client.ToDo.retrieve(
+        uuid="05442685-15d4-49a6-abd9-2ed0a4bbe73e", returns=CustomToDo
+    )
+
+    assert_type(todo, CustomToDo)
+    assert isinstance(todo, CustomToDo)
+    assert todo.title == "Write tests"
+    assert not hasattr(todo, "done")
+    assert todo.imaginary_attribute == "I do not exist"
