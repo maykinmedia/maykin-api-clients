@@ -10,18 +10,26 @@ constructor of an "arguments" struct, so type checkers and LSPs see exactly
 the keyword arguments each operation accepts.
 """
 
+from __future__ import annotations
+
 import copy
 import inspect
 import string
-from collections.abc import Callable
-from typing import Generic, Self, TypeVar, final, get_origin
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from dataclasses import asdict, is_dataclass
+from functools import wraps
+from typing import TYPE_CHECKING, Generic, Self, TypeVar, final, get_origin
 from urllib.parse import quote
 
 import msgspec
+from requests import Response
 from typing_extensions import ParamSpec
 
 from .parameters import NoArgs, PayloadArgs, QueryArgsProtocol, QueryParams
 from .resources import BaseResource
+
+if TYPE_CHECKING:
+    from _typeshed import DataclassInstance
 
 # can't set a bound, because even a detail endoint could return something other than
 # a mapping/dict
@@ -278,3 +286,85 @@ The retrieve operation.
 An alias for the read operation, since the list and retrieve operations definitions
 effectively must support the same semantics.
 """
+
+
+def process_response[T](response: Response, into: type[T]) -> T:
+    """
+    Process the :class:`requests.Response` into structured data.
+
+    .. todo:: Implement default error handling here & discern between IO and semantic
+      errors.
+    """
+    # TODO - error handling. Inspect status code & compose with error handler callback,
+    # since different APIs will have different error response shapes.
+    # TODO: - error handling: best-effort parse into documented shapes, but fall back
+    # to malformed handlers in case an intermediate proxy returns the same error code
+    # but with a different content type (e.g. 503 with HTML instead of JSON).
+
+    # for now: assume no errors :)
+    # response.raise_for_status()
+
+    response_data = response.json()
+    return msgspec.convert(response_data, type=into)
+
+
+type HttpCallFunc[T, **P] = Callable[P, tuple[Response, type[T]]]
+"""
+A funtion or method that returns an HTTP response and the struct to decode it into.
+"""
+
+
+def operation[T, **P](f: HttpCallFunc[T, P]):
+    """
+    Mark a callable as a JSON API operation.
+
+    .. todo:: accept arguments, e.g. to override the (default) process_response
+      callable. This must support composition.
+    """
+
+    @wraps(f)
+    def decorator(*args: P.args, **kwargs: P.kwargs) -> T:
+        response, output_shape = f(*args, **kwargs)
+        return process_response(response, into=output_shape)
+
+    return decorator
+
+
+type ParamValuePrimitive = str | int | float
+type ParamValue = ParamValuePrimitive | Iterable[ParamValuePrimitive]
+
+
+def as_params(
+    params: msgspec.Struct | DataclassInstance | Mapping[str, ParamValue] | None,
+) -> Mapping[str, ParamValue] | None:
+    """
+    Prepare the query params to pass them to :mod:`requests` ``params`` argument.
+
+    .. note:: the type annotations serve as a POC that msgspec isn't a hard dependency.
+       In practice, plain dicts & dataclasses are already supported by msgspec too.
+
+    .. todo:: we can't guarantee the runtime value matches the return type (which is a
+       narrower type than what requests' ParamsType allows).
+    """
+    match params:
+        case None:
+            return None
+        case msgspec.Struct():
+            return msgspec.to_builtins(params)
+        case Mapping():
+            return params
+        # POC - this could also just go through msgspec.to_builtins()
+        case _ if is_dataclass(type(params)):
+            return asdict(params)
+        case _:
+            raise NotImplementedError("Unsupported params type provided.")
+
+
+# from requests._typing.JsonType
+type JsonType = (
+    None | bool | int | float | str | Sequence[JsonType] | Mapping[str, JsonType]
+)
+
+
+def as_json(payload: msgspec.Struct | DataclassInstance) -> JsonType:
+    return msgspec.to_builtins(payload)

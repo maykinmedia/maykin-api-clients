@@ -11,19 +11,16 @@ from uuid import UUID
 
 import pytest
 from ape_pie import APIClient as BaseClient
+from ape_pie.decorators import endpoint
 
 from maykin_api_clients.core import (
     UNSET,
     BaseResource,
     BaseSchemaStruct,
-    CreateOperation,
-    ListOperation,
-    PayloadArgs,
-    QueryArgs,
     QueryParamsStruct,
-    RetrieveOperation,
     UnsetType,
 )
+from maykin_api_clients.core.operations import as_json, as_params, operation
 
 pytestmark = [pytest.mark.vcr]
 
@@ -32,7 +29,7 @@ pytestmark = [pytest.mark.vcr]
 #
 
 
-class Todo(BaseSchemaStruct, rename="camel"):
+class ToDo(BaseSchemaStruct, rename="camel"):
     uuid: UUID
     title: str
     completed_on: datetime | None
@@ -43,31 +40,33 @@ class TodoParams(QueryParamsStruct, rename="camel"):
     optional_query: str | UnsetType = UNSET
 
 
-class RetrieveTodoArgs(QueryArgs[TodoParams]):
-    uuid: UUID | str
-
-
 class TodoResource(BaseResource["APIClient"]):
-    list = ListOperation(
-        path="todos",
-        # shorthand for query params without needing a subclass
-        call_args=QueryArgs[TodoParams],
-        returns=Sequence[Todo],
-    )
-    retrieve = RetrieveOperation(
-        path="todos/{uuid}",
-        call_args=RetrieveTodoArgs,
-        returns=Todo,
-    )
-    create = CreateOperation(
-        path="todos",
-        call_args=PayloadArgs[Todo],
-        returns=Todo,
-    )
+    @endpoint("todos")
+    @operation
+    def list(self, url_path: str, /, params: TodoParams | None = None):
+        return (
+            self.http_client.get(url_path, params=as_params(params)),
+            Sequence[ToDo],
+        )
+
+    @endpoint("todos/{uuid}")
+    @operation
+    def retrieve(
+        self, url_path: str, /, uuid: UUID | str, params: TodoParams | None = None
+    ):
+        return (self.http_client.get(url_path, params=as_params(params)), ToDo)
+
+    @endpoint("todos")
+    @operation
+    def create(self, url_path: str, /, payload: ToDo):
+        return (
+            self.http_client.post(url_path, json=as_json(payload)),
+            ToDo,
+        )
 
 
 class APIClient(BaseClient):
-    Todo = TodoResource()
+    ToDo = TodoResource()
 
 
 #
@@ -82,11 +81,11 @@ def api_client():
 
 
 def test_client_resources_interact_with_api(api_client: APIClient):
-    todos = api_client.Todo.list()
+    todos = api_client.ToDo.list()
 
     assert isinstance(todos, Sequence)
     assert len(todos) >= 2
-    assert all(isinstance(x, Todo) for x in todos)
+    assert all(isinstance(x, ToDo) for x in todos)
 
     first_todo = todos[0]
     assert first_todo.uuid == UUID("05442685-15d4-49a6-abd9-2ed0a4bbe73e")
@@ -97,10 +96,10 @@ def test_client_resources_interact_with_api(api_client: APIClient):
 
 def test_client_supports_query_parameters(api_client: APIClient):
     # only specified params are passed along
-    todos = api_client.Todo.list(params=TodoParams(optional_query="Write tests"))
+    todos = api_client.ToDo.list(params=TodoParams(optional_query="Write tests"))
     assert len(todos) == 1
 
-    todos_2 = api_client.Todo.list(params=TodoParams())
+    todos_2 = api_client.ToDo.list(params=TodoParams())
     assert len(todos_2) >= 2
 
 
@@ -114,14 +113,14 @@ def test_client_supports_query_parameters(api_client: APIClient):
 def test_client_can_use_path_parameters_for_retrieve(
     api_client: APIClient, uuid: str | UUID
 ):
-    todo = api_client.Todo.retrieve(uuid=uuid)
+    todo = api_client.ToDo.retrieve(uuid=uuid)
 
     assert todo.title == "Write tests"
     assert todo.done is False
 
 
 def test_type_inference(api_client: APIClient):
-    retrieve_todo = api_client.Todo.retrieve
+    retrieve_todo = api_client.ToDo.retrieve
 
     if TYPE_CHECKING:
         # valid calls
