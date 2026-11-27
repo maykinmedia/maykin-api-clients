@@ -1,0 +1,50 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Language:
+      - nl
+      Connection:
+      - keep-alive
+      User-Agent:
+      - OpenProductClient
+    method: GET
+    uri: http://localhost:8100/producttypen/api/v1/prijzen?producttype__uuid=5d42a943-065a-46e7-8f17-54a5edbc88eb
+  response:
+    body:
+      string: '{"count":1,"next":null,"previous":null,"results":[{"uuid":"55ed7060-0f46-4f04-9cb2-8dc494c83a92","producttype_uuid":"5d42a943-065a-46e7-8f17-54a5edbc88eb","prijsopties":[{"uuid":"29068829-c5cc-490a-80bc-a68675df7b85","bedrag":"120.95","beschrijving":"spoed"},{"uuid":"d14fe09b-1a6c-4a3a-918f-cddc925b4d6f","bedrag":"80.95","beschrijving":"normaal"}],"prijsregels":[],"actief_vanaf":"2025-05-06"}]}'
+    headers:
+      API-version:
+      - 1.7.0
+      Allow:
+      - GET, POST, HEAD, OPTIONS
+      Content-Language:
+      - nl
+      Content-Length:
+      - '397'
+      Content-Security-Policy:
+      - 'frame-ancestors ''none''; worker-src ''self'' blob:; form-action ''self'';
+        img-src ''self'' data: cdn.redoc.ly; script-src ''self'' ''unsafe-inline'';
+        font-src ''self'' fonts.gstatic.com; frame-src ''self''; style-src ''self''
+        ''unsafe-inline'' fonts.googleapis.com; object-src ''none''; default-src ''self'';
+        base-uri ''self'''
+      Content-Type:
+      - application/json
+      Cross-Origin-Opener-Policy:
+      - same-origin
+      Referrer-Policy:
+      - same-origin
+      Vary:
+      - Accept-Language, origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+    status:
+      code: 200
+      message: OK
+version: 1

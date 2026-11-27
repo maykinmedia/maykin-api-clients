@@ -1,7 +1,84 @@
 ---
 
+x-openproduct-image: &openproduct-image
+  image: maykinmedia/open-product:${TAG:-1.9.0}
+  # no arm64 image
+  platform: linux/amd64
+
+x-openproduct-env: &openproduct-env
+  DJANGO_SETTINGS_MODULE: openproduct.conf.docker
+  IS_HTTPS: 'false'
+  DB_NAME: openproduct
+  DB_USER: openproduct
+  DB_HOST: postgres
+  ALLOWED_HOSTS: '*'
+  CACHE_DEFAULT: redis:6379/0
+  CACHE_AXES: redis:6379/0
+  SECRET_KEY: ${SECRET_KEY:-django-insecure-f8s@b*ds4t84-q_2#c0j0506@!l2q6r5_pq5e!vm^_9c*#^66b}
+  CELERY_BROKER_URL: redis://redis:6379/0
+  CELERY_RESULT_BACKEND: redis://redis:6379/0
+  DISABLE_2FA: 'true'
+  OTEL_SDK_DISABLED: 'true'
+  OTEL_SERVICE_NAME: 'op-client-test'
+
 services:
+  postgres:
+    image: postgis/postgis:${PG_VERSION:-17-3.5}
+    # no arm64 image
+    platform: linux/amd64
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - ./docker/postgres/initdb.d/:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:8
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   dummy-api:
     build: ./dummy_api/
     ports:
       - "8000:8000"
+
+  # migrates, loads fixtures and exits
+  # FIXME: fixtuers are an anti-pattern - each test should ensure the data setup is
+  # done. For speed *now*, the service manager setup is not yet copied over.
+  openproduct-init:
+    <<: *openproduct-image
+    environment:
+      <<: *openproduct-env
+      # RUN_SETUP_CONFIG: 'true'
+    command:
+      - /bin/bash
+      - -c
+      - |
+        python src/manage.py migrate
+        python src/manage.py loaddata /app/fixtures/test_data.json
+    volumes: &openproduct-volumes
+      - ./docker/open-product/:/app/fixtures/:ro
+    depends_on: &openproduct-depends-on
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  open-product:
+    <<: *openproduct-image
+    environment: *openproduct-env
+    volumes: *openproduct-volumes
+    depends_on:
+      <<: *openproduct-depends-on
+      openproduct-init:
+        condition: service_completed_successfully
+    ports:
+      # Use a somewhat arbitrary port to avoid clashes
+      - 8100:8000
