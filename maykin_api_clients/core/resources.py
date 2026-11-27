@@ -2,24 +2,11 @@ from __future__ import annotations
 
 import copy
 import logging
-from collections.abc import Mapping
-from typing import Self
+from typing import Self, final
 
-import msgspec
-import requests
 from ape_pie import APIClient
 
-from .query_params import QueryParams
-
 logger = logging.getLogger(__name__)
-
-
-type Headers = Mapping[str, str]
-"""
-Case-insensitive mapping of HTTP headers.
-
-Primarily used to model HTTP request headers.
-"""
 
 
 class BaseResource[C: APIClient]:
@@ -51,7 +38,7 @@ class BaseResource[C: APIClient]:
         bound = copy.copy(self)
         bound._http_client = client
         # Cache on the instance. Because this is a non-data descriptor
-        # (no __set__), the instance attribute now shadows it, so later
+        # (disabled __set__), the instance attribute now shadows it, so later
         # accesses skip __get__ and return the same bound resource.
         client.__dict__[self._name] = bound
 
@@ -60,6 +47,7 @@ class BaseResource[C: APIClient]:
     def __set__(self, *args, **kwargs):
         raise NotImplementedError("Deliberately not supported.")
 
+    @final
     @property
     def http_client(self) -> C:
         if self._http_client is None:
@@ -68,111 +56,3 @@ class BaseResource[C: APIClient]:
                 "client instance."
             )
         return self._http_client
-
-    @staticmethod
-    def process_response[T](
-        response: requests.Response,
-        struct: type[T],
-    ) -> T:
-        """
-        Perform the necessary processing on the retrieved data.
-
-        The JSON data is processed and converted to msgspec structs. This includes the
-        validation of the incoming data.
-
-        .. todo:: Implement proper error handling with response-shape aware structs.
-        """
-        # for now: assume no errors :)
-        # response.raise_for_status()
-
-        response_data = response.json()
-        return msgspec.convert(response_data, type=struct)
-
-    def _get(
-        self,
-        path: str,
-        headers: Headers | None = None,
-        params: QueryParams | None = None,
-    ) -> requests.Response:
-        query_params = params.as_params() if params is not None else None
-        response = self.http_client.request(
-            "get", path, headers=headers, params=query_params
-        )
-        return response
-
-    # def _post(
-    #     self,
-    #     path: str,
-    #     headers: Headers | None = None,
-    #     params: QueryParams | None = None,
-    #     data: object = None,
-    # ) -> requests.Response:
-    #     query_params = params.as_params() if params is not None else None
-    #     response = self.http_client.request(
-    #         "post",
-    #         path,
-    #         headers=headers,
-    #         json=data,
-    #         params=query_params,
-    #     )
-    #     return response
-
-    # def _put(
-    #     self,
-    #     path: str,
-    #     headers: Headers | None = None,
-    #     params: QueryParams | None = None,
-    #     data: object = None,
-    # ) -> requests.Response:
-    #     query_params = params.as_params() if params is not None else None
-    #     response = self.http_client.request(
-    #         "put", path, headers=headers, json=data, params=query_params
-    #     )
-    #     return response
-
-    # def _delete(
-    #     self,
-    #     path: str,
-    #     headers: Headers | None = None,
-    #     params: QueryParams | None = None,
-    # ) -> requests.Response:
-    #     query_params = params.as_params() if params is not None else None
-    #     response = self.http_client.request(
-    #         "delete",
-    #         path,
-    #         headers=headers,
-    #         params=query_params,
-    #     )
-    #     return response
-
-    # def _patch(
-    #     self,
-    #     path: str,
-    #     headers: Headers | None = None,
-    #     params: QueryParams | None = None,
-    #     data: object = None,
-    # ) -> requests.Response:
-    #     query_params = params.as_params() if params is not None else None
-    #     response = self.http_client.request(
-    #         "patch",
-    #         path,
-    #         headers=headers,
-    #         params=query_params,
-    #         json=data,
-    #     )
-    #     return response
-
-    # def _options(
-    #     self,
-    #     path: str,
-    #     headers: Headers | None = None,
-    #     params: QueryParams | None = None,
-    # ) -> requests.Response:
-    #     query_params = params.as_params() if params is not None else None
-    #     response = self.http_client.request(
-    #         "options",
-    #         path,
-    #         headers=headers,
-    #         params=query_params,
-    #     )
-    #     return response

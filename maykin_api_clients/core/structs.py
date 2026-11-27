@@ -1,6 +1,23 @@
-from typing import dataclass_transform
+from typing import Final, dataclass_transform
 
+import msgspec
 from msgspec import Struct, StructMeta
+
+type UnsetType = msgspec.UnsetType
+"""
+Type for attributes that may be absent/unset.
+
+The type alias is a library implementation detail that serves as anti-corruption layer
+and preventing leaky abstractions.
+"""
+
+UNSET: Final[UnsetType] = msgspec.UNSET
+"""
+Constant
+
+The type alias is a library implementation detail that serves as anti-corruption layer
+and preventing leaky abstractions.
+"""
 
 
 @dataclass_transform(kw_only_default=True)

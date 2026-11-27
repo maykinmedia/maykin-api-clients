@@ -3,6 +3,15 @@ class ClientError(Exception):
     Base exception class for all error raised by maykin-api-clients.
     """
 
+    is_retriable: bool = False
+    """
+    Mark an exception type as suitable for automatic retries.
+
+    HTTP 503 errors are transient in nature and thus suitable for automatic retries,
+    while HTTP 400 errors typically indicate a client error that won't go away with
+    blind retries.
+    """
+
 
 class ClientIOError(ClientError):
     """

@@ -28,7 +28,8 @@ classifiers = [
 requires-python = ">=3.12"
 dependencies = [
     "ape-pie>=0.2.0",
-    "msgspec>=0.22.0"
+    "msgspec>=0.22.0",
+    "typing-extensions",
 ]
 
 [project.urls]
@@ -103,6 +104,7 @@ ignore = []
 pythonVersion = "3.12"
 pythonPlatform = "Linux"
 typeCheckingMode = "basic"
+reportUnnecessaryTypeIgnoreComment = "error"
 
 [tool.ruff.lint]
 extend-select = [
