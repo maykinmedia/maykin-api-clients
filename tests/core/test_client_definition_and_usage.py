@@ -5,6 +5,7 @@ Test full request-response processing of a client against the dummy API service.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING, Generic, assert_type
 from uuid import UUID
@@ -39,7 +40,7 @@ class TodoParams(BaseSchemaStruct, rename="camel"):
     optional_query: str | UnsetType = UNSET
 
 
-TD = TypeVar("TD", bound=ToDo, default=ToDo)
+TD = TypeVar("TD", default=ToDo)
 """
 The ToDo struct of a resource, which API dialects can replace with a subclass.
 """
@@ -185,3 +186,22 @@ def test_client_resource_customization():
     assert_type(todo, _MyToDo)
     assert isinstance(todo, _MyToDo)
     assert todo.optional_arg == "default"
+
+
+def test_can_take_plain_dataclasses():
+    @dataclass
+    class ToDoDC:
+        uuid: str
+        custom_property: str = "custom"
+
+    class CustomClient(APIClient):
+        ToDo = TodoResource(todo=ToDoDC)
+
+    with CustomClient(base_url="http://localhost:8000") as client:
+        todo = client.ToDo.retrieve(uuid="05442685-15d4-49a6-abd9-2ed0a4bbe73e")
+
+    assert_type(todo, ToDoDC)
+    assert isinstance(todo, ToDoDC)
+    # string, not deserialized into UUID (!)
+    assert todo.uuid == "05442685-15d4-49a6-abd9-2ed0a4bbe73e"
+    assert todo.custom_property == "custom"
