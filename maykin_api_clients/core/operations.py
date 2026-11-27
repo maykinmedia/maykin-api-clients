@@ -168,7 +168,50 @@ class operation:
         f: Callable[Concatenate[S, _URLPath, P], tuple[Response, type[T]]],
         /,
     ) -> _OperationMethod[S, P, T]:
+        if __debug__:
+            _check_signature(f)
         return _OperationMethod(self._endpoint(f))
+
+
+def _check_signature(method: Callable[..., object]) -> None:
+    """
+    Introspect the method signature and enforce conventions.
+
+    Conventions established with the team:
+
+    * keywords only, the only exception is the generated 'url_path' positional argument
+      from :class:`ape_pie.decorators.endpoint` that's automatically injected and must
+      be positional due to limitations in the typing system.
+    * use the ``_url_path`` name with the underscore to signal there's something
+      "special" about it. This is primarily aimed at developers looking at the source
+      code to see what the expected arguments are, rather than relying on their IDE/LSP
+      integration.
+    * Given the context of our client with resource classes, we expect methods that take
+      a 'self' argument, which they usually need to make the underlying HTTP call.
+    """
+    # enforce conventions
+    sig = inspect.signature(method)
+    params = list(sig.parameters.values())
+    dotted_path = f"{method.__module__}.{method.__qualname__}"
+    if len(params) <= 2:  # param 1 is self, param 2 must be the url path
+        raise TypeError(f"{dotted_path} must take the '_url_path' positional argument.")
+
+    assert params[0].name == "self"
+    if params[1].name != "_url_path":
+        raise TypeError(
+            f"{dotted_path} must use the name '_url_path' for the formatted "
+            "endpoint path (convention enforcement)."
+        )
+
+    rest = params[2:]
+    if any(
+        p.kind not in (inspect.Parameter.KEYWORD_ONLY, inspect.Parameter.VAR_KEYWORD)
+        for p in rest
+    ):
+        raise TypeError(
+            f"{dotted_path}'s additional arguments must be keyword only. Hint: "
+            "use 'def operation(self, _url_path, *, kwarg1, kwarg2): ...'"
+        )
 
 
 type ParamValuePrimitive = str | int | float

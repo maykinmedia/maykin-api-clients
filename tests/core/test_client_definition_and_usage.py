@@ -51,25 +51,25 @@ class TodoResource(BaseResource["APIClient"], Generic[TD]):
         self.todo = todo
 
     @operation("todos")
-    def list(self, url_path: str, /, params: TodoParams | None = None):
+    def list(self, _url_path: str, *, params: TodoParams | None = None, **kwargs):
         """
         Get the collection of todos from the API.
         """
         return (
-            self.http_client.get(url_path, params=as_params(params)),
+            self.http_client.get(_url_path, params=as_params(params)),
             Sequence[self.todo],
         )
 
     @operation("todos/{uuid}")
     def retrieve(
-        self, url_path: str, /, uuid: UUID | str, params: TodoParams | None = None
+        self, _url_path: str, *, uuid: UUID | str, params: TodoParams | None = None
     ):
-        return (self.http_client.get(url_path, params=as_params(params)), self.todo)
+        return (self.http_client.get(_url_path, params=as_params(params)), self.todo)
 
     @operation("todos")
-    def create(self, url_path: str, /, payload: ToDo):
+    def create(self, _url_path: str, *, payload: ToDo):
         return (
-            self.http_client.post(url_path, json=as_json(payload)),
+            self.http_client.post(_url_path, json=as_json(payload)),
             self.todo,
         )
 
